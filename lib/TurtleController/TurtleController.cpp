@@ -72,7 +72,7 @@ void Joystick::setup(){
     pinMode(xPin, INPUT); // set all pins connected to joystick to receive inputs
     pinMode(yPin, INPUT);
 
-    zButton.setDebounceTime(50); // setup debouncing on pushning the stick down
+    zButton.setDebounceTime(50); // setup debouncing on pushing the stick down
     zButton.loop();
 }
 
@@ -104,8 +104,8 @@ float Controller::getJoy1Y(float deadzone ){return joy1.getY(deadzone);}
 bool Controller::getJoy1Z(){return joy1.getZ();}
 
 // joy 2
-float Controller::getJoy2X(float deadzone){ return joy2.getX(deadzone); }
-float Controller::getJoy2Y(float deadzone){ return joy2.getY(deadzone); }
+float Controller::getJoy2X(float deadzone){ return joy2.getX(deadzone)*-1; }
+float Controller::getJoy2Y(float deadzone){ return joy2.getY(deadzone)*-1; }
 bool  Controller::getJoy2Z(){ return joy2.getZ(); }
 
 // face (xyab) buttons

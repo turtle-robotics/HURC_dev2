@@ -13,13 +13,13 @@ const int SCREEN_WIDTH = 128;
 const int SCREEN_LENGTH = 64;
 const int OLED_RESET = -1; // change this if the oled has a reset pin
 
-const int joyL_x_pin = 39;
-const int joyL_y_pin = 36;
-const int joyL_z_pin = 26;
+const int joyL_x_pin = 34;
+const int joyL_y_pin = 35;
+const int joyL_z_pin = 25;
 
-const int joyR_x_pin = 34;
-const int joyR_y_pin = 35;
-const int joyR_z_pin = 25;
+const int joyR_x_pin = 39;
+const int joyR_y_pin = 36;
+const int joyR_z_pin = 26;
 
 const int but_a_pin = 17;
 const int but_b_pin = 16;
@@ -32,7 +32,7 @@ const int but_Rb_pin = 14;
 const int but_menu_pin = 23;
 
 const int poll_rate = 64;
-const float deadzone = 0.17;
+const float deadzone = 0.2f;
 
 const int LOGO_START_X = 96;
 const int LOGO_START_Y = 32;
@@ -111,7 +111,7 @@ typedef struct struct_message {
   float j1x; float j1y; bool j1z;
   float j2x; float j2y; bool j2z;
 
-  bool butA; bool butB; bool butX; bool butY;
+  bool butX; bool butY; bool butA; bool butB;
   bool butLb; bool butLt; bool butRb; bool butRt; bool butMenu;
 } struct_message;
 
@@ -235,7 +235,7 @@ void setup() {
   // use oled time
   display.clearDisplay();
   // display configs
-  display.setTextSize(2);      // 2x size of normal font
+  display.setTextSize(1);      // normal font
   display.setTextColor(WHITE); // Draw white text
   display.cp437(true);         // Use full 256 char 'Code Page 437' font
   display.setTextWrap(true);
@@ -339,13 +339,7 @@ void drawTurtleLogo(){
   display.drawBitmap(LOGO_START_X, LOGO_START_Y, turtle_logo, LOGO_WIDTH, LOGO_HEIGHT, 1); // draw sick af turtle logo
 }
 
-void drawControllerState(u_int startX, u_int startY){
-  drawJoystickState(startX, startY);
-  drawButtonState(startX + 31, startY);
-  drawControllerBorders();
-}
-
-void drawJoystickState(u_int startX, u_int startY){
+void drawJoystick1State(u_int startX, u_int startY){
   // draw joystick state
 
   // some settings
@@ -370,6 +364,31 @@ void drawJoystickState(u_int startX, u_int startY){
 
 }
 
+void drawJoystick2State(u_int startX, u_int startY){
+  // draw joystick state
+
+  // some settings
+  const u_int regionSize = 31;
+  const u_int circleSize = 2;
+  // used later
+  const u_int maxDist = ((regionSize - 4)/2) - circleSize; // the minus 4 is for a nice 2 pixel border around the region just for spacing
+
+  // calculate coordinates
+  u_int CENTER_X = startX + regionSize/2;
+  u_int CENTER_Y = startY + regionSize/2;
+
+  u_int xCoord = CENTER_X + controllerData.j2x * maxDist;
+  u_int yCoord = CENTER_Y + controllerData.j2y * maxDist;
+
+  // draw
+  display.fillCircle(CENTER_X + lastControllerData.j2x * maxDist, CENTER_Y + lastControllerData.j2y * maxDist, circleSize, BLACK); // wipe last
+  if(controllerData.j2z)
+    display.fillCircle(xCoord, yCoord, 2, WHITE);
+  else
+    display.drawCircle(xCoord, yCoord, 2, WHITE);
+
+}
+
 void drawButtonState(u_int startX, u_int startY){
   // some settings
   const u_int regionXSize = 35;
@@ -381,13 +400,21 @@ void drawButtonState(u_int startX, u_int startY){
   u_int centerX = startX + regionXSize/2;
   u_int centerY = startY + regionYSize/2 - regionYSize/13;
 
-    // L button
-    u_int LButtonStartX = centerX - regionXSize/5 - 3;
-    u_int LButtonStartY = centerY - regionYSize/5 - 2;
+    // Lb button
+    u_int LbButtonStartX = centerX - regionXSize/5 - 3;
+    u_int LbButtonStartY = centerY - regionYSize/5 - 2;
 
-    // R button
-    u_int RButtonStartX = centerX + regionXSize/5 - 3;
-    u_int RButtonStartY = centerY - regionYSize/5 - 2;
+    // Rb button
+    u_int RbButtonStartX = centerX + regionXSize/5 - 3;
+    u_int RbButtonStartY = centerY - regionYSize/5 - 2;
+
+    // Lt button
+    u_int LtButtonStartX = centerX - regionXSize/5 - 2;
+    u_int LtButtonStartY = centerY - regionYSize/5 - 7;
+
+    // Rt button
+    u_int RtButtonStartX = centerX + regionXSize/5 - 2;
+    u_int RtButtonStartY = centerY - regionYSize/5 - 7;
 
     // A button
     u_int AButtonStartX = centerX;
@@ -405,23 +432,41 @@ void drawButtonState(u_int startX, u_int startY){
     u_int YButtonStartX = centerX;
     u_int YButtonStartY = centerY + regionXSize/17;
   
-  // draw L button // FIXME ADD TRIGGER BUTTONS
-  // if(controllerData.butL){
-  //   display.fillRoundRect(LButtonStartX, LButtonStartY, 6, 4, 2, WHITE);
-  // }
-  // else{
-  //   display.fillRoundRect(LButtonStartX, LButtonStartY, 6, 4, 2, BLACK);
-  //   display.drawRoundRect(LButtonStartX, LButtonStartY, 6, 4, 2, WHITE);
-  // }
+  // draw Lb button
+  if(controllerData.butLb){
+    display.fillRoundRect(LbButtonStartX, LbButtonStartY, 8, 4, 2, WHITE);
+  }
+  else{
+    display.fillRoundRect(LbButtonStartX, LbButtonStartY, 8, 4, 2, BLACK);
+    display.drawRoundRect(LbButtonStartX, LbButtonStartY, 8, 4, 2, WHITE);
+  }
 
-  // // draw R button
-  // if(controllerData.butR){
-  //   display.fillRoundRect(RButtonStartX, RButtonStartY, 6, 4, 2, WHITE);
-  // }
-  // else{
-  //   display.fillRoundRect(RButtonStartX, RButtonStartY, 6, 4, 2, BLACK);
-  //   display.drawRoundRect(RButtonStartX, RButtonStartY, 6, 4, 2, WHITE);
-  // }
+  // draw Rb button
+  if(controllerData.butRb){
+    display.fillRoundRect(RbButtonStartX, RbButtonStartY, 8, 4, 2, WHITE);
+  }
+  else{
+    display.fillRoundRect(RbButtonStartX, RbButtonStartY, 8, 4, 2, BLACK);
+    display.drawRoundRect(RbButtonStartX, RbButtonStartY, 8, 4, 2, WHITE);
+  }
+
+  // draw Lt button
+  if(controllerData.butLt){
+    display.fillRoundRect(LtButtonStartX, LtButtonStartY, 6, 6, 2, WHITE);
+  }
+  else{
+    display.fillRoundRect(LtButtonStartX, LtButtonStartY, 6, 6, 2, BLACK);
+    display.drawRoundRect(LtButtonStartX, LtButtonStartY, 6, 6, 2, WHITE);
+  }
+  
+  // draw Rt button
+  if(controllerData.butRt){
+    display.fillRoundRect(RtButtonStartX, RtButtonStartY, 6, 6, 2, WHITE);
+  }
+  else{
+    display.fillRoundRect(RtButtonStartX, RtButtonStartY, 6, 6, 2, BLACK);
+    display.drawRoundRect(RtButtonStartX, RtButtonStartY, 6, 6, 2, WHITE);
+  }
 
   // draw A button
   if(controllerData.butA){
@@ -462,7 +507,8 @@ void drawButtonState(u_int startX, u_int startY){
 }
 
 void drawControllerBorders(){
-  display.drawRoundRect(32, 34, 27, 27, 2, WHITE); // draw border around joystick
+  display.drawRoundRect(1, 34, 27, 27, 2, WHITE); // draw border around joystick 1
+  display.drawRoundRect(32, 34, 27, 27, 2, WHITE); // draw border around joystick 2
 }
 #pragma endregion drawing_functions
 
@@ -540,6 +586,13 @@ void debugModeOperations(){
   }
 
   display.display();
+}
+
+void drawControllerState(u_int startX, u_int startY){
+  drawJoystick1State(startX - 31, startY);
+  drawJoystick2State(startX, startY);
+  drawButtonState(startX + 31, startY);
+  drawControllerBorders();
 }
 
 bool getButtonRisingEdge(bool currentVal, bool oldVal){
