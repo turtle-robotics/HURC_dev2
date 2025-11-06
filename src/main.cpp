@@ -13,17 +13,23 @@ const int SCREEN_WIDTH = 128;
 const int SCREEN_LENGTH = 64;
 const int OLED_RESET = -1; // change this if the oled has a reset pin
 
-const int joy_x_pin = 34;
-const int joy_y_pin = 32;
-const int joy_z_pin = 33;
+const int joyL_x_pin = 39;
+const int joyL_y_pin = 36;
+const int joyL_z_pin = 26;
 
-const int but_a_pin = 13;
-const int but_b_pin = 12;
-const int but_x_pin = 14;
-const int but_y_pin = 27;
-const int but_r_pin = 19;
-const int but_l_pin = 18;
-const int but_s_pin = 5;
+const int joyR_x_pin = 34;
+const int joyR_y_pin = 35;
+const int joyR_z_pin = 25;
+
+const int but_a_pin = 17;
+const int but_b_pin = 16;
+const int but_x_pin = 19;
+const int but_y_pin = 18;
+const int but_Lt_pin = 27;
+const int but_Lb_pin = 32;
+const int but_Rt_pin = 13;
+const int but_Rb_pin = 14;
+const int but_menu_pin = 23;
 
 const int poll_rate = 64;
 const float deadzone = 0.17;
@@ -102,16 +108,11 @@ const unsigned char turtle_logo [] PROGMEM = { // sick af turtle logo
 // Structure example to send data
 // Must match the receiver structure
 typedef struct struct_message {
-  float j1x;
-  float j1y;
-  bool j1z;
+  float j1x; float j1y; bool j1z;
+  float j2x; float j2y; bool j2z;
 
-  bool butA;
-  bool butB;
-  bool butX;
-  bool butY;
-  bool butR;
-  bool butL;
+  bool butA; bool butB; bool butX; bool butY;
+  bool butLb; bool butLt; bool butRb; bool butRt; bool butMenu;
 } struct_message;
 
 // enum to track state declaration and increment operator
@@ -218,7 +219,8 @@ void setup() {
 
   // controller setup
   delay(1000);
-  controller = Controller(joy_x_pin, joy_y_pin, joy_z_pin, but_a_pin, but_b_pin, but_x_pin, but_y_pin, but_r_pin, but_l_pin, but_s_pin);
+  controller = Controller(joyL_x_pin, joyL_y_pin, joyL_z_pin, joyR_x_pin, joyR_y_pin, joyR_z_pin, but_a_pin, but_b_pin, but_x_pin, but_y_pin,
+    but_Lt_pin, but_Lb_pin, but_Rt_pin, but_Rb_pin, but_menu_pin);
  
   // OLED setup
 
@@ -254,7 +256,7 @@ void loop() {
   controller.controllerUpdate();
   // get all the updated controller data loaded
   updateData();
-  switchButtonPressed = controller.getS();
+  switchButtonPressed = controller.getMenu();
   
   // switch device state if switch button gets pressed
   if(getButtonRisingEdge(switchButtonPressed, lastSwitchButtonState)){ // this is so we only switch once per button press
@@ -297,15 +299,25 @@ void updateData(){
   controllerData.j1y = controller.getJoy1Y(deadzone) * ((flipY) ? -1 : 1); // flip y axis if flipY is true
   controllerData.j1z = controller.getJoy1Z();
 
+  controllerData.j2x = controller.getJoy2X(deadzone) * ((flipX) ? -1 : 1); // flip x axis if flipX is true
+  controllerData.j2y = controller.getJoy2Y(deadzone) * ((flipY) ? -1 : 1); // flip y axis if flipY is true
+  controllerData.j2z = controller.getJoy2Z();
+
   controllerData.butA = controller.getA();
   controllerData.butB = controller.getB();
   controllerData.butX = controller.getX();
   controllerData.butY = controller.getY();
-  controllerData.butR = controller.getR();
-  controllerData.butL = controller.getL();
-  Serial.printf("joy1: %.2f %.2f %d  buttons: %d %d %d %d %d %d\n", controllerData.j1x, controllerData.j1y,
-    controllerData.j1z, controllerData.butA, controllerData.butB,
-    controllerData.butX, controllerData.butY, controllerData.butR, controllerData.butL); // uncomment if want debug messages
+  
+  controllerData.butLt = controller.getLt();
+  controllerData.butLb = controller.getLb();
+  controllerData.butRt = controller.getRt();
+  controllerData.butRb = controller.getRb();
+
+  controllerData.butMenu = controller.getMenu();
+
+  Serial.printf("joy1: %.2f %.2f %d  joy2: %.2f %.2f %d  buttons: %d %d %d %d %d  triggers: %d %d %d %d menu: %d\n", controllerData.j1x, controllerData.j1y,
+    controllerData.j1z, controllerData.j2x, controllerData.j2y, controllerData.j2z, controllerData.butA, controllerData.butB,
+    controllerData.butX, controllerData.butY, controllerData.butLt, controllerData.butLb, controllerData.butRt, controllerData.butRb, controllerData.butMenu); // uncomment if want debug messages
 
 }
 
@@ -392,23 +404,23 @@ void drawButtonState(u_int startX, u_int startY){
     u_int YButtonStartX = centerX;
     u_int YButtonStartY = centerY + regionXSize/17;
   
-  // draw L button
-  if(controllerData.butL){
-    display.fillRoundRect(LButtonStartX, LButtonStartY, 6, 4, 2, WHITE);
-  }
-  else{
-    display.fillRoundRect(LButtonStartX, LButtonStartY, 6, 4, 2, BLACK);
-    display.drawRoundRect(LButtonStartX, LButtonStartY, 6, 4, 2, WHITE);
-  }
+  // draw L button // FIXME ADD TRIGGER BUTTONS
+  // if(controllerData.butL){
+  //   display.fillRoundRect(LButtonStartX, LButtonStartY, 6, 4, 2, WHITE);
+  // }
+  // else{
+  //   display.fillRoundRect(LButtonStartX, LButtonStartY, 6, 4, 2, BLACK);
+  //   display.drawRoundRect(LButtonStartX, LButtonStartY, 6, 4, 2, WHITE);
+  // }
 
-  // draw R button
-  if(controllerData.butR){
-    display.fillRoundRect(RButtonStartX, RButtonStartY, 6, 4, 2, WHITE);
-  }
-  else{
-    display.fillRoundRect(RButtonStartX, RButtonStartY, 6, 4, 2, BLACK);
-    display.drawRoundRect(RButtonStartX, RButtonStartY, 6, 4, 2, WHITE);
-  }
+  // // draw R button
+  // if(controllerData.butR){
+  //   display.fillRoundRect(RButtonStartX, RButtonStartY, 6, 4, 2, WHITE);
+  // }
+  // else{
+  //   display.fillRoundRect(RButtonStartX, RButtonStartY, 6, 4, 2, BLACK);
+  //   display.drawRoundRect(RButtonStartX, RButtonStartY, 6, 4, 2, WHITE);
+  // }
 
   // draw A button
   if(controllerData.butA){
@@ -492,12 +504,12 @@ void debugModeOperations(){
   drawControllerState();
   
 
-   if(getButtonRisingEdge(controllerData.butA, lastControllerData.butA)){ // Go back a team when you press A
+   if(getButtonRisingEdge(controllerData.butLb, lastControllerData.butLb)){ // Go back a team when you press left bumper
     currentAddressIndex = (currentAddressIndex + 1) % address_count;
     update = true;
   }
 
-  if(getButtonRisingEdge(controllerData.butB, lastControllerData.butB)){ // Go back a team when you press B
+  if(getButtonRisingEdge(controllerData.butRb, lastControllerData.butRb)){ // Go back a team when you press right bumper
     if(currentAddressIndex == 0){
       currentAddressIndex = address_count - 1;
     }

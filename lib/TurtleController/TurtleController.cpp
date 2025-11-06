@@ -80,13 +80,18 @@ void Joystick::setup(){
 
 // controller methods
 
-Controller::Controller(): joy1(Joystick()), butA(ezButton(0)), butB(ezButton(0)), butX(ezButton(0)), butY(ezButton(0)), butR(ezButton(0)), butL(ezButton(0)), butSwitch((0)){
+Controller::Controller(): joy1(Joystick()), joy2(Joystick()),
+    butX(ezButton(0)), butY(ezButton(0)), butA(ezButton(0)), butB(ezButton(0)),
+    butLt(ezButton(0)), butLb(ezButton(0)), butRt(ezButton(0)), butRb(ezButton(0)), 
+    butMenu(ezButton(0)) {
     setup();
 }
 
-Controller::Controller(int j1x, int j1y, int j1z, int butAPin, int butBPin, int butXPin, int butYPin, int butRPin, int butLPin, int butSPin):
-joy1(Joystick(j1x, j1y, j1z)), butA(ezButton(butAPin)),
-butB(ezButton(butBPin)), butX(ezButton(butXPin)), butY(ezButton(butYPin)), butR(ezButton(butRPin)), butL(ezButton(butLPin)), butSwitch(ezButton(butSPin)){
+Controller::Controller(int j1x, int j1y, int j1z, int j2x, int j2y, int j2z, int butXPin, int butYPin, int butAPin, int butBPin, int butLtPin, int butLbPin, int butRtPin, int butRbPin, int butMenuPin)
+        : joy1(Joystick(j1x, j1y, j1z)), joy2(Joystick(j2x, j2y, j2z)), 
+        butX(ezButton(butXPin)), butY(ezButton(butYPin)), butA(ezButton(butAPin)), butB(ezButton(butBPin)), 
+        butLt(ezButton(butLtPin)), butLb(ezButton(butLbPin)), butRt(ezButton(butRtPin)), butRb(ezButton(butRbPin)), 
+        butMenu(ezButton(butMenuPin)) {
     setup();
 }
 
@@ -94,79 +99,43 @@ Controller::~Controller(){}
 
 // joy 1
 
-float Controller::getJoy1X(float deadzone ){
-    return joy1.getX(deadzone);
-}
+float Controller::getJoy1X(float deadzone ){return joy1.getX(deadzone);}
+float Controller::getJoy1Y(float deadzone ){return joy1.getY(deadzone);}
+bool Controller::getJoy1Z(){return joy1.getZ();}
 
-float Controller::getJoy1Y(float deadzone ){
-    return joy1.getY(deadzone);
-}
+// joy 2
+float Controller::getJoy2X(float deadzone){ return joy2.getX(deadzone); }
+float Controller::getJoy2Y(float deadzone){ return joy2.getY(deadzone); }
+bool  Controller::getJoy2Z(){ return joy2.getZ(); }
 
-bool Controller::getJoy1Z(){
-    return joy1.getZ();
-}
+// face (xyab) buttons
+bool Controller::getX(){ return !butX.getState(); }
+bool Controller::getY(){ return !butY.getState(); }
+bool Controller::getA(){ return !butA.getState(); }
+bool Controller::getB(){ return !butB.getState(); }
 
-// buttons
-
-bool Controller::getA(){
-    return !butA.getState();
-}
-
-bool Controller::getB(){
-    return !butB.getState();
-}
-
-bool Controller::getX(){
-    return !butX.getState();
-}
-
-bool Controller::getY(){
-    return !butY.getState();
-}
-bool Controller::getR(){
-    return !butR.getState();
-}
-bool Controller::getL(){
-    return !butL.getState();
-}
-bool Controller::getS(){
-    return !butSwitch.getState();
-}
-
-
+// shoulder & menu buttons
+bool Controller::getLt(){ return !butLt.getState(); }
+bool Controller::getLb(){ return !butLb.getState(); }
+bool Controller::getRt(){ return !butRt.getState(); }
+bool Controller::getRb(){ return !butRb.getState(); }
+bool Controller::getMenu(){ return !butMenu.getState(); }
 
 
 void Controller::controllerUpdate(){
-    butA.loop();
-    butB.loop();
-    butX.loop();
-    butY.loop();
-    butL.loop();
-    butR.loop();
-    butSwitch.loop();
+    butX.loop(); butY.loop(); butA.loop(); butB.loop();
+    butLt.loop(); butLb.loop(); butRt.loop(); butRb.loop(); butMenu.loop();
 
-    joy1.joystickUpdate();
+    joy1.joystickUpdate(); joy2.joystickUpdate();
 }
 
-
-
-
 void Controller::setup(){
-    butA.setDebounceTime(50);
-    butB.setDebounceTime(50);
-    butX.setDebounceTime(50);
-    butY.setDebounceTime(50);
-    butR.setDebounceTime(50);
-    butL.setDebounceTime(50);
-    butSwitch.setDebounceTime(50);
+    butX.setDebounceTime(50); butY.setDebounceTime(50); butA.setDebounceTime(50); butB.setDebounceTime(50);
+    butLt.setDebounceTime(50); butLb.setDebounceTime(50); butRt.setDebounceTime(50); butRb.setDebounceTime(50);
+    butMenu.setDebounceTime(50);
 
-    butA.loop();
-    butB.loop();
-    butX.loop();
-    butY.loop();
-    butR.loop();
-    butL.loop();
-    butSwitch.loop();
-    
+    butX.loop(); butY.loop(); butA.loop(); butB.loop();
+    butLt.loop(); butLb.loop(); butRt.loop(); butRb.loop();
+    butMenu.loop();
 }
 
