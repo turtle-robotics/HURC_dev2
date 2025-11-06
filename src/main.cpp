@@ -219,7 +219,7 @@ void setup() {
 
   // controller setup
   delay(1000);
-  controller = Controller(joyL_x_pin, joyL_y_pin, joyL_z_pin, joyR_x_pin, joyR_y_pin, joyR_z_pin, but_a_pin, but_b_pin, but_x_pin, but_y_pin,
+  controller = Controller(joyL_x_pin, joyL_y_pin, joyL_z_pin, joyR_x_pin, joyR_y_pin, joyR_z_pin, but_x_pin, but_y_pin, but_a_pin, but_b_pin,
     but_Lt_pin, but_Lb_pin, but_Rt_pin, but_Rb_pin, but_menu_pin);
  
   // OLED setup
@@ -303,10 +303,10 @@ void updateData(){
   controllerData.j2y = controller.getJoy2Y(deadzone) * ((flipY) ? -1 : 1); // flip y axis if flipY is true
   controllerData.j2z = controller.getJoy2Z();
 
-  controllerData.butA = controller.getA();
-  controllerData.butB = controller.getB();
   controllerData.butX = controller.getX();
   controllerData.butY = controller.getY();
+  controllerData.butA = controller.getA();
+  controllerData.butB = controller.getB();
   
   controllerData.butLt = controller.getLt();
   controllerData.butLb = controller.getLb();
@@ -316,8 +316,9 @@ void updateData(){
   controllerData.butMenu = controller.getMenu();
 
   Serial.printf("joy1: %.2f %.2f %d  joy2: %.2f %.2f %d  buttons: %d %d %d %d %d  triggers: %d %d %d %d menu: %d\n", controllerData.j1x, controllerData.j1y,
-    controllerData.j1z, controllerData.j2x, controllerData.j2y, controllerData.j2z, controllerData.butA, controllerData.butB,
-    controllerData.butX, controllerData.butY, controllerData.butLt, controllerData.butLb, controllerData.butRt, controllerData.butRb, controllerData.butMenu); // uncomment if want debug messages
+    controllerData.j1z, controllerData.j2x, controllerData.j2y, controllerData.j2z, 
+    controllerData.butX, controllerData.butY, controllerData.butA, controllerData.butB, 
+    controllerData.butLt, controllerData.butLb, controllerData.butRt, controllerData.butRb, controllerData.butMenu); // uncomment if want debug messages
 
 }
 
