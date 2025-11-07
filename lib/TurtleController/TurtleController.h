@@ -16,8 +16,7 @@ class Joystick{
         //Joystick(const Joystick& other); // copy constructor
         //Joystick& operator=(const Joystick& other); // copy assignment operator
 
-        float getX(float deadzone);
-        float getY(float deadzone);
+        float getX(float deadzone); float getY(float deadzone);
         bool getZ();
         void joystickUpdate();
     private:
@@ -33,29 +32,23 @@ class Controller{
     
     public:
         Controller(); // default constructor
-        Controller(int j1x, int j1y, int j1z, int j2x, int j2y, int j2z, int butXPin, int butYPin, int butAPin, int butBPin, int butLtPin, int butLbPin, int butRtPin, int butRbPin, int butMenuPin, int butDpadPin); // two-joystick constructor
+        Controller(int j1x, int j1y, int j1z, int j2x, int j2y, int j2z, 
+            int butXPin, int butYPin, int butAPin, int butBPin, 
+            int butLtPin, int butLbPin, int butRtPin, int butRbPin, 
+            int butMenuPin, int butDpadPin); // two-joystick constructor
         ~Controller();
 
         // Left / Joy1
-        float getJoy1X(float deadzone = 0);
-        float getJoy1Y(float deadzone = 0);
+        float getJoy1X(float deadzone = 0); float getJoy1Y(float deadzone = 0);
         bool getJoy1Z();
 
         // Right / Joy2
-        float getJoy2X(float deadzone = 0);
-        float getJoy2Y(float deadzone = 0);
+        float getJoy2X(float deadzone = 0); float getJoy2Y(float deadzone = 0);
         bool getJoy2Z();
 
-        bool getA();
-        bool getB();
-        bool getX();
-        bool getY();
-        bool getLt();
-        bool getLb();
-        bool getRt();
-        bool getRb();
-        bool getMenu();
-        bool getDpad();
+        bool getA(); bool getB(); bool getX(); bool getY();
+        bool getLt(); bool getLb(); bool getRt(); bool getRb();
+        bool getMenu(); bool getDpad();
 
         void controllerUpdate();
 

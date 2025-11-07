@@ -7,9 +7,7 @@
 const int ADC_MAX = 4095;
 
 #pragma region constructors
-Joystick::Joystick() : xPin(0), yPin(0), zButton(ezButton(0)){
-    setup();
-}
+Joystick::Joystick() : xPin(0), yPin(0), zButton(ezButton(0)){setup();}
 
 Joystick::~Joystick(){}
 
@@ -17,9 +15,7 @@ Joystick::~Joystick(){}
    setup();
 }*/
 
-Joystick::Joystick(int xPin, int yPin, int zPin): xPin(xPin), yPin(yPin), zButton(ezButton(zPin)){
-    setup();
-}
+Joystick::Joystick(int xPin, int yPin, int zPin): xPin(xPin), yPin(yPin), zButton(ezButton(zPin)){setup();}
 
 /*Joystick& Joystick::operator=(const Joystick& other){
     xPin = other.xPin; // grab other's pin numbers
@@ -30,8 +26,6 @@ Joystick::Joystick(int xPin, int yPin, int zPin): xPin(xPin), yPin(yPin), zButto
     
 }*/
 #pragma endregion constructors
-
-
 
 float Joystick::getX(float deadzone = 0){
     u_int16_t adcReadout = analogRead(xPin); // get output 
@@ -56,12 +50,7 @@ float Joystick::getY(float deadzone = 0){
     }
 }
 
-bool Joystick::getZ(){
-    return !zButton.getState(); 
-}
-
-
-
+bool Joystick::getZ(){return !zButton.getState();}
 
 void Joystick::joystickUpdate(){
     zButton.loop(); // update button stuff for debouncing and stuff, make sure to run every loop
@@ -75,8 +64,6 @@ void Joystick::setup(){
     zButton.setDebounceTime(50); // setup debouncing on pushing the stick down
     zButton.loop();
 }
-
-
 
 // controller methods
 
@@ -98,7 +85,6 @@ Controller::Controller(int j1x, int j1y, int j1z, int j2x, int j2y, int j2z, int
 Controller::~Controller(){}
 
 // joy 1
-
 float Controller::getJoy1X(float deadzone ){return joy1.getX(deadzone);}
 float Controller::getJoy1Y(float deadzone ){return joy1.getY(deadzone);}
 bool Controller::getJoy1Z(){return joy1.getZ();}
@@ -109,24 +95,25 @@ float Controller::getJoy2Y(float deadzone){ return joy2.getY(deadzone)*-1; }
 bool  Controller::getJoy2Z(){ return joy2.getZ(); }
 
 // face (xyab) buttons
-bool Controller::getX(){ return !butX.getState(); }
-bool Controller::getY(){ return !butY.getState(); }
-bool Controller::getA(){ return !butA.getState(); }
-bool Controller::getB(){ return !butB.getState(); }
+bool Controller::getX(){ return !butX.getState();}
+bool Controller::getY(){ return !butY.getState();}
+bool Controller::getA(){ return !butA.getState();}
+bool Controller::getB(){ return !butB.getState();}
 
-// shoulder, menu buttons & Dpad
-bool Controller::getLt(){ return !butLt.getState(); }
-bool Controller::getLb(){ return !butLb.getState(); }
-bool Controller::getRt(){ return !butRt.getState(); }
-bool Controller::getRb(){ return !butRb.getState(); }
-bool Controller::getMenu(){ return !butMenu.getState(); }
-bool Controller::getDpad(){ return !butDpad.getState(); }
+// trigger and bumper buttons
+bool Controller::getLt(){ return !butLt.getState();}
+bool Controller::getLb(){ return !butLb.getState();}
+bool Controller::getRt(){ return !butRt.getState();}
+bool Controller::getRb(){ return !butRb.getState();}
+
+// menu and dpad buttons
+bool Controller::getMenu(){ return !butMenu.getState();}
+bool Controller::getDpad(){ return !butDpad.getState();}
 
 
 void Controller::controllerUpdate(){
     butX.loop(); butY.loop(); butA.loop(); butB.loop();
     butLt.loop(); butLb.loop(); butRt.loop(); butRb.loop(); butMenu.loop(); butDpad.loop();
-
     joy1.joystickUpdate(); joy2.joystickUpdate();
 }
 
