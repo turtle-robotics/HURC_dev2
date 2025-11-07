@@ -83,15 +83,15 @@ void Joystick::setup(){
 Controller::Controller(): joy1(Joystick()), joy2(Joystick()),
     butX(ezButton(0)), butY(ezButton(0)), butA(ezButton(0)), butB(ezButton(0)),
     butLt(ezButton(0)), butLb(ezButton(0)), butRt(ezButton(0)), butRb(ezButton(0)), 
-    butMenu(ezButton(0)) {
+    butMenu(ezButton(0)), butDpad(ezButton(0)) {
     setup();
 }
 
-Controller::Controller(int j1x, int j1y, int j1z, int j2x, int j2y, int j2z, int butXPin, int butYPin, int butAPin, int butBPin, int butLtPin, int butLbPin, int butRtPin, int butRbPin, int butMenuPin)
+Controller::Controller(int j1x, int j1y, int j1z, int j2x, int j2y, int j2z, int butXPin, int butYPin, int butAPin, int butBPin, int butLtPin, int butLbPin, int butRtPin, int butRbPin, int butMenuPin, int butDpadPin)
         : joy1(Joystick(j1x, j1y, j1z)), joy2(Joystick(j2x, j2y, j2z)), 
         butX(ezButton(butXPin)), butY(ezButton(butYPin)), butA(ezButton(butAPin)), butB(ezButton(butBPin)), 
         butLt(ezButton(butLtPin)), butLb(ezButton(butLbPin)), butRt(ezButton(butRtPin)), butRb(ezButton(butRbPin)), 
-        butMenu(ezButton(butMenuPin)) {
+        butMenu(ezButton(butMenuPin)), butDpad(ezButton(butDpadPin)) {
     setup();
 }
 
@@ -114,17 +114,18 @@ bool Controller::getY(){ return !butY.getState(); }
 bool Controller::getA(){ return !butA.getState(); }
 bool Controller::getB(){ return !butB.getState(); }
 
-// shoulder & menu buttons
+// shoulder, menu buttons & Dpad
 bool Controller::getLt(){ return !butLt.getState(); }
 bool Controller::getLb(){ return !butLb.getState(); }
 bool Controller::getRt(){ return !butRt.getState(); }
 bool Controller::getRb(){ return !butRb.getState(); }
 bool Controller::getMenu(){ return !butMenu.getState(); }
+bool Controller::getDpad(){ return !butDpad.getState(); }
 
 
 void Controller::controllerUpdate(){
     butX.loop(); butY.loop(); butA.loop(); butB.loop();
-    butLt.loop(); butLb.loop(); butRt.loop(); butRb.loop(); butMenu.loop();
+    butLt.loop(); butLb.loop(); butRt.loop(); butRb.loop(); butMenu.loop(); butDpad.loop();
 
     joy1.joystickUpdate(); joy2.joystickUpdate();
 }
@@ -132,10 +133,10 @@ void Controller::controllerUpdate(){
 void Controller::setup(){
     butX.setDebounceTime(50); butY.setDebounceTime(50); butA.setDebounceTime(50); butB.setDebounceTime(50);
     butLt.setDebounceTime(50); butLb.setDebounceTime(50); butRt.setDebounceTime(50); butRb.setDebounceTime(50);
-    butMenu.setDebounceTime(50);
+    butMenu.setDebounceTime(50); butDpad.setDebounceTime(50);
 
     butX.loop(); butY.loop(); butA.loop(); butB.loop();
     butLt.loop(); butLb.loop(); butRt.loop(); butRb.loop();
-    butMenu.loop();
+    butMenu.loop(); butDpad.loop();
 }
 

@@ -30,9 +30,10 @@ const int but_Lb_pin = 32;
 const int but_Rt_pin = 13;
 const int but_Rb_pin = 14;
 const int but_menu_pin = 23;
+const int but_dpad_pin = 12;
 
 const int poll_rate = 64;
-const float deadzone = 0.2f;
+const float deadzone = 0.25f;
 
 const int LOGO_START_X = 96;
 const int LOGO_START_Y = 32;
@@ -112,7 +113,7 @@ typedef struct struct_message {
   float j2x; float j2y; bool j2z;
 
   bool butX; bool butY; bool butA; bool butB;
-  bool butLb; bool butLt; bool butRb; bool butRt; bool butMenu;
+  bool butLb; bool butLt; bool butRb; bool butRt; bool butMenu; bool butDpad;
 } struct_message;
 
 // enum to track state declaration and increment operator
@@ -220,7 +221,7 @@ void setup() {
   // controller setup
   delay(1000);
   controller = Controller(joyL_x_pin, joyL_y_pin, joyL_z_pin, joyR_x_pin, joyR_y_pin, joyR_z_pin, but_x_pin, but_y_pin, but_a_pin, but_b_pin,
-    but_Lt_pin, but_Lb_pin, but_Rt_pin, but_Rb_pin, but_menu_pin);
+    but_Lt_pin, but_Lb_pin, but_Rt_pin, but_Rb_pin, but_menu_pin, but_dpad_pin);
  
   // OLED setup
 
@@ -314,11 +315,12 @@ void updateData(){
   controllerData.butRb = controller.getRb();
 
   controllerData.butMenu = controller.getMenu();
+  controllerData.butDpad = controller.getDpad();
 
   Serial.printf("joy1: %.2f %.2f %d  joy2: %.2f %.2f %d  buttons: %d %d %d %d %d  triggers: %d %d %d %d menu: %d\n", controllerData.j1x, controllerData.j1y,
     controllerData.j1z, controllerData.j2x, controllerData.j2y, controllerData.j2z, 
     controllerData.butX, controllerData.butY, controllerData.butA, controllerData.butB, 
-    controllerData.butLt, controllerData.butLb, controllerData.butRt, controllerData.butRb, controllerData.butMenu); // uncomment if want debug messages
+    controllerData.butLt, controllerData.butLb, controllerData.butRt, controllerData.butRb, controllerData.butMenu, controllerData.butDpad); // uncomment if want debug messages
 
 }
 
@@ -431,7 +433,11 @@ void drawButtonState(u_int startX, u_int startY){
     // Y button
     u_int YButtonStartX = centerX;
     u_int YButtonStartY = centerY + regionXSize/17;
-  
+
+    // Dpad Button
+    u_int DpadButtonStartX = centerX - regionXSize - 16; // idk if theres a better way to do this but whatever
+    u_int DpadButtonStartY = centerY - regionYSize/3 - 10;
+
   // draw Lb button
   if(controllerData.butLb){
     display.fillRoundRect(LbButtonStartX, LbButtonStartY, 8, 4, 2, WHITE);
@@ -504,6 +510,14 @@ void drawButtonState(u_int startX, u_int startY){
     display.drawCircle(YButtonStartX, YButtonStartY, buttonRadius, WHITE);
   }
 
+  // draw Dpad button
+  if(controllerData.butDpad){
+    display.fillRoundRect(DpadButtonStartX, DpadButtonStartY, 6, 4, 2, WHITE);
+  }
+  else{
+    display.fillRoundRect(DpadButtonStartX, DpadButtonStartY, 6, 4, 2, BLACK);
+    display.drawRoundRect(DpadButtonStartX, DpadButtonStartY, 6, 4, 2, WHITE);
+  }
 }
 
 void drawControllerBorders(){
@@ -542,10 +556,8 @@ void debugModeOperations(){
     drawDefaults();
     drawControllerState();
     //print debug indicator
-    display.setTextSize(1);
     display.setCursor(0, 56);
     display.printf("DEBUG");
-    display.setTextSize(2);
   }
   bool update = false; // track if update happened
   drawControllerState();
@@ -579,10 +591,8 @@ void debugModeOperations(){
     drawDefaults();
     drawControllerState();
     // print debug indicator
-    display.setTextSize(1);
     display.setCursor(0, 56);
     display.printf("DEBUG");
-    display.setTextSize(2);
   }
 
   display.display();

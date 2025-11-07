@@ -29,11 +29,11 @@ class Joystick{
 class Controller{
     private:
         Joystick joy1, joy2; // left and right joysticks respectively
-        ezButton butA, butB, butX, butY, butLt, butLb, butRt, butRb, butMenu;
+        ezButton butA, butB, butX, butY, butLt, butLb, butRt, butRb, butMenu, butDpad;
     
     public:
         Controller(); // default constructor
-        Controller(int j1x, int j1y, int j1z, int j2x, int j2y, int j2z, int butXPin, int butYPin, int butAPin, int butBPin, int butLtPin, int butLbPin, int butRtPin, int butRbPin, int butMenuPin); // two-joystick constructor
+        Controller(int j1x, int j1y, int j1z, int j2x, int j2y, int j2z, int butXPin, int butYPin, int butAPin, int butBPin, int butLtPin, int butLbPin, int butRtPin, int butRbPin, int butMenuPin, int butDpadPin); // two-joystick constructor
         ~Controller();
 
         // Left / Joy1
@@ -55,20 +55,12 @@ class Controller{
         bool getRt();
         bool getRb();
         bool getMenu();
+        bool getDpad();
 
         void controllerUpdate();
 
     private:
         void setup();
-
-        
-
-        
-
-        
-
 };
-
-
 
 #endif
