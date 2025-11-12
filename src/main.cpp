@@ -563,12 +563,12 @@ void debugModeOperations(){
   drawControllerState();
   
 
-   if(getButtonRisingEdge(controllerData.butLb, lastControllerData.butLb)){ // Go back a team when you press left bumper
+   if(getButtonRisingEdge(controllerData.butRb, lastControllerData.butRb)){ // Go forward a team when you press right bumper
     currentAddressIndex = (currentAddressIndex + 1) % address_count;
     update = true;
   }
 
-  if(getButtonRisingEdge(controllerData.butRb, lastControllerData.butRb)){ // Go back a team when you press right bumper
+  if(getButtonRisingEdge(controllerData.butLb, lastControllerData.butLb)){ // Go back a team when you press left bumper
     if(currentAddressIndex == 0){
       currentAddressIndex = address_count - 1;
     }
