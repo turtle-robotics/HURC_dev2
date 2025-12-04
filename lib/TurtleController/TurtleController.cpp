@@ -85,7 +85,7 @@ Controller::Controller(int j1x, int j1y, int j1z, int j2x, int j2y, int j2z, int
 Controller::~Controller(){}
 
 // joy 1
-float Controller::getJoy1X(float deadzone ){return joy1.getX(deadzone);}
+float Controller::getJoy1X(float deadzone ){return joy1.getX(deadzone)*-1;}
 float Controller::getJoy1Y(float deadzone ){return joy1.getY(deadzone);}
 bool Controller::getJoy1Z(){return joy1.getZ();}
 
