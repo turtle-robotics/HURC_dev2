@@ -41,7 +41,7 @@ const int LOGO_START_Y = 32;
 // various constant data the controller uses
 const uint8_t broadcast_address[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
-const int address_count = 19;
+const int address_count = 20;
 
 const char* team_names[address_count] PROGMEM = {
   "Debug Test", // debug
@@ -63,6 +63,7 @@ const char* team_names[address_count] PROGMEM = {
   "The Turtle", // 30
   "Uncertified Forklift", // SOMTECH 1
   "mongo2007", // SOMTECH 2
+  "Dexter", // SOMTECH 3
 };
 
 const uint8_t address_list[address_count][6] PROGMEM = {
@@ -85,6 +86,7 @@ const uint8_t address_list[address_count][6] PROGMEM = {
   {0x08, 0xb6, 0x1f, 0xb8, 0x1d, 0x28}, // 30
   {0x80, 0xf3, 0xda, 0x41, 0x45, 0xa0}, // SOMTECH 1 (Isaac)
   {0xec, 0xe3, 0x34, 0x21, 0x68, 0x6c}, // SOMTECH 2
+  {0x80, 0xf3, 0xda, 0x42, 0x9d, 0x40}, // SOMTECH 3
   // {0x, 0x, 0x, 0x, 0x, 0x}, // 
 };
 
