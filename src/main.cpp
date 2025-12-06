@@ -41,7 +41,7 @@ const int LOGO_START_Y = 32;
 // various constant data the controller uses
 const uint8_t broadcast_address[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
-const int address_count = 21;
+const int address_count = 18;
 
 const char* team_names[address_count] PROGMEM = {
   "Debug Test", // debug
