@@ -44,11 +44,46 @@ const uint8_t broadcast_address[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 const int address_count = 21;
 
 const char* team_names[address_count] PROGMEM = {
-  "khanathan" // 1
+  "Debug Test", // debug
+  "khanathan jr", // 1
+  "BMNH", // 2
+  "TBD", // 4
+  "Guido", // 6
+  "egg", // 8
+  "Shay and team", // 12
+  "Isaac", // 14
+  "Wall Breakers", // 15
+  "SEC", // 16
+  "Papa Smurf", // 19
+  "BBL Drizzy", // 20
+  "team dunce", // 21
+  "gecko", // 23
+  "OnePieceIsTrash", // 27
+  "The Turtle", // 30
+  "Uncertified Forklift", // SOMTECH 1
+  "mongo2007", // SOMTECH 2
 };
 
 const uint8_t address_list[address_count][6] PROGMEM = {
+  {0x08, 0x00, 0x00, 0x00, 0x00, 0x00}, // debug
   {0x08, 0xb6, 0x1f, 0xb8, 0x36, 0xdc}, // 1
+  {0x80, 0xf3, 0xda, 0x42, 0xd6, 0x34}, // 2 
+  {0x80, 0xf3, 0xda, 0x40, 0xfc, 0x4c}, // 4
+  {0xec, 0xe3, 0x34, 0x22, 0xe0, 0x04}, // 6
+  {0xec, 0xe3, 0x34, 0x22, 0xcf, 0x2c}, // 8
+  {0x80, 0xf3, 0xda, 0x41, 0x00, 0x0c}, // 12
+  {0xc8, 0x2e, 0x18, 0xf0, 0xa4, 0x0c}, // 14
+  {0x80, 0xf3, 0xda, 0x40, 0xe4, 0x74}, // 15
+  {0xc8, 0x2e, 0x18, 0xee, 0x5b, 0xd0}, // 16
+  {0x80, 0xf3, 0xda, 0x41, 0x6c, 0x80}, // 19
+  {0x80, 0xf3, 0xda, 0x42, 0xd9, 0xcc}, // 20
+  {0x80, 0xf3, 0xda, 0x41, 0x2d, 0xa8}, // 21
+  {0x80, 0xf3, 0xda, 0x40, 0xeb, 0xf0}, // 23
+  {0x80, 0xf3, 0xda, 0x42, 0xfd, 0x60}, // 27
+  {0x08, 0xb6, 0x1f, 0xb8, 0x1d, 0x28}, // 30
+  {0x80, 0xf3, 0xda, 0x41, 0x45, 0xa0}, // SOMTECH 1 (Isaac)
+  {0xec, 0xe3, 0x34, 0x21, 0x68, 0x6c}, // SOMTECH 2
+  // {0x, 0x, 0x, 0x, 0x, 0x}, // 
 };
 
 const int LOGO_WIDTH = 32;
@@ -523,12 +558,12 @@ void debugModeOperations(){
   drawControllerState();
   
 
-   if(getButtonRisingEdge(controllerData.butRb, lastControllerData.butRb)){ // Go forward a team when you press right bumper
+   if(getButtonRisingEdge(controllerData.butB, lastControllerData.butB)){ // Go forward a team when you press right bumper (butB for face plate)
     currentAddressIndex = (currentAddressIndex + 1) % address_count;
     update = true;
   }
 
-  if(getButtonRisingEdge(controllerData.butLb, lastControllerData.butLb)){ // Go back a team when you press left bumper
+  if(getButtonRisingEdge(controllerData.butA, lastControllerData.butA)){ // Go back a team when you press left bumper (butA for face plate)
     if(currentAddressIndex == 0){
       currentAddressIndex = address_count - 1;
     }
