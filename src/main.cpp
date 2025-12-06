@@ -41,10 +41,10 @@ const int LOGO_START_Y = 32;
 // various constant data the controller uses
 const uint8_t broadcast_address[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
-const int address_count = 22; // commented out with names
-// const int address_count = 19;
+const int address_count = 23; // total number of addresses in the list
 
 const char* team_names[address_count] PROGMEM = {
+  "debug test", // debug
   "khanathan jr", // 1
   "BMNH", // 2
   "TBD", // 4
@@ -70,6 +70,7 @@ const char* team_names[address_count] PROGMEM = {
 };
 
 const uint8_t address_list[address_count][6] PROGMEM = {
+  {0x08, 0x00, 0x00, 0x00, 0x00, 0x00}, // debug test
   {0x08, 0xb6, 0x1f, 0xb8, 0x36, 0xdc}, // 1
   {0x80, 0xf3, 0xda, 0x40, 0xe3, 0xd8}, // 2 
   {0x80, 0xf3, 0xda, 0x40, 0xfc, 0x4c}, // 4
