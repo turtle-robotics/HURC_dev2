@@ -17,31 +17,17 @@ import shutil
 from pathlib import Path
 from datetime import datetime
 
+COL_TIMESTAMP = "Timestamp"
+COL_TEAM_NUM  = "What is your team number? SOMTECH members put \"SOMTECH\""
+COL_TEAM_NAME = "Create a team name. SOMTECH members put SOMTECH <team name>"
+MAC_COL_HINT  = "xx:xx:xx:xx:xx:xx"
 
-# ─── constants ────────────────────────────────────────────────────────────────
-
-# Column names as they appear in the CSV header (Google Form export)
-COL_TIMESTAMP   = "Timestamp"
-COL_TEAM_NUM    = "What is your team number? SOMTECH members put \"SOMTECH\""
-COL_TEAM_NAME   = "Create a team name. SOMTECH members put SOMTECH <team name>"
-MAC_BYTE_COLS   = [
-    "xx:xx:xx:xx:xx:xx ",   # note trailing space — that's how Google Forms exports it
-    "xx:xx:xx:xx:xx:xx  2",
-    "xx:xx:xx:xx:xx:xx  3",
-    "xx:xx:xx:xx:xx:xx  4",
-    "xx:xx:xx:xx:xx:xx  5",
-    "xx:xx:xx:xx:xx:xx  6",
-]
-
-# The debug entry kept at index 0 — never overwritten by sheet data
 DEBUG_ENTRY = {
     "label":   "debug",
     "name":    "debug test",
     "address": [0x08, 0x00, 0x00, 0x00, 0x00, 0x00],
 }
 
-
-# ─── helpers ──────────────────────────────────────────────────────────────────
 
 def parse_timestamp(ts: str) -> datetime:
     for fmt in ("%Y-%m-%d %H:%M:%S.%f", "%Y-%m-%d %H:%M:%S", "%m/%d/%Y %H:%M:%S"):
@@ -52,11 +38,29 @@ def parse_timestamp(ts: str) -> datetime:
     return datetime.min
 
 
-def parse_mac(row: dict) -> list[int] | None:
-    """Return list of 6 ints from the 6 MAC byte columns, or None on error."""
+def find_mac_indices(headers: list[str]) -> list[int]:
+    """
+    Return the indices of the 6 MAC byte columns.
+    Works whether Google Sheets exports them all with the same name
+    or with numbered suffixes — we just find the first matching column
+    and take 6 consecutive columns from there.
+    """
+    first = None
+    for i, h in enumerate(headers):
+        if MAC_COL_HINT in h:
+            first = i
+            break
+    if first is None:
+        sys.exit(f"ERROR: Could not find MAC address columns (looking for '{MAC_COL_HINT}' in headers).\n"
+                 f"Headers found: {headers}")
+    indices = list(range(first, first + 6))
+    return indices
+
+
+def parse_mac(row_values: list[str], mac_indices: list[int]) -> list[int] | None:
     try:
-        return [int(row[col].strip(), 16) for col in MAC_BYTE_COLS]
-    except (KeyError, ValueError):
+        return [int(row_values[i].strip(), 16) for i in mac_indices]
+    except (IndexError, ValueError):
         return None
 
 
@@ -65,7 +69,6 @@ def mac_to_c(bytes_: list[int]) -> str:
 
 
 def team_key(team_num: str) -> tuple:
-    """Sort key: numeric teams first (by number), then SOMTECH teams."""
     t = team_num.strip().upper()
     if t == "SOMTECH":
         return (1, 0, "")
@@ -75,60 +78,59 @@ def team_key(team_num: str) -> tuple:
         return (0, 999, t)
 
 
-# ─── main ─────────────────────────────────────────────────────────────────────
-
-def load_csv(path: Path) -> list[dict]:
+def load_csv(path: Path) -> tuple[list[str], list[list[str]]]:
     with path.open(newline="", encoding="utf-8-sig") as f:
-        return list(csv.DictReader(f))
+        reader = csv.reader(f)
+        headers = next(reader)
+        rows = list(reader)
+    return headers, rows
 
 
-def deduplicate(rows: list[dict]) -> list[dict]:
-    """
-    Keep only the latest submission per (team_number, team_name) pair.
-    SOMTECH teams are deduplicated per team_name (each SOMTECH team is distinct).
-    """
+def deduplicate(headers, rows, mac_indices) -> list[dict]:
+    num_idx  = headers.index(COL_TEAM_NUM)
+    name_idx = headers.index(COL_TEAM_NAME)
+    ts_idx   = headers.index(COL_TIMESTAMP)
+
     best: dict[tuple, dict] = {}
     for row in rows:
-        num  = row.get(COL_TEAM_NUM, "").strip()
-        name = row.get(COL_TEAM_NAME, "").strip()
-        mac  = parse_mac(row)
+        if len(row) <= max(num_idx, name_idx, ts_idx):
+            continue
+        num  = row[num_idx].strip()
+        name = row[name_idx].strip()
+        mac  = parse_mac(row, mac_indices)
         if not num or not name or mac is None:
             continue
 
-        # SOMTECH teams: keyed by name so each robot is separate
         key = (num.upper(), name.lower()) if num.upper() == "SOMTECH" else (num, "")
-
-        ts = parse_timestamp(row.get(COL_TIMESTAMP, ""))
-        if key not in best or ts > parse_timestamp(best[key].get(COL_TIMESTAMP, "")):
-            best[key] = row
+        ts  = parse_timestamp(row[ts_idx])
+        if key not in best or ts > parse_timestamp(best[key]["row"][ts_idx]):
+            best[key] = {"row": row, "num": num, "name": name, "mac": mac}
 
     return list(best.values())
 
 
-def build_entries(rows: list[dict]) -> list[dict]:
-    """Return sorted list of {label, name, address} dicts, debug entry first."""
-    deduped = deduplicate(rows)
+def build_entries(headers, rows, mac_indices) -> list[dict]:
+    deduped = deduplicate(headers, rows, mac_indices)
     entries = []
-    for row in deduped:
-        num  = row[COL_TEAM_NUM].strip()
-        name = row[COL_TEAM_NAME].strip()
-        mac  = parse_mac(row)
+    for e in deduped:
+        num   = e["num"]
+        name  = e["name"]
+        mac   = e["mac"]
         label = f"SOMTECH ({name})" if num.upper() == "SOMTECH" else str(num)
         entries.append({"label": label, "name": name, "address": mac, "_num": num})
 
     entries.sort(key=lambda e: team_key(e["_num"]))
-
     return [DEBUG_ENTRY] + entries
 
 
 def build_c_arrays(entries: list[dict]) -> tuple[str, str]:
-    """Return (team_names block, address_list block) as C++ source strings."""
     count = len(entries)
-
-    names_lines = [f"const int address_count = {count}; // total number of addresses in the list\n",
-                   "\n",
-                   f'const char* team_names[address_count] PROGMEM = {{\n']
-    addr_lines  = [f"const uint8_t address_list[address_count][6] PROGMEM = {{\n"]
+    names_lines = [
+        f"const int address_count = {count}; // total number of addresses in the list\n",
+        "\n",
+        f"const char* team_names[address_count] PROGMEM = {{\n",
+    ]
+    addr_lines = [f"const uint8_t address_list[address_count][6] PROGMEM = {{\n"]
 
     for e in entries:
         label = e["label"]
@@ -139,38 +141,28 @@ def build_c_arrays(entries: list[dict]) -> tuple[str, str]:
 
     names_lines.append("};\n")
     addr_lines.append( "};\n")
-
     return "".join(names_lines), "".join(addr_lines)
 
 
-# Regex patterns that match the existing blocks inside main.cpp
-_COUNT_RE    = re.compile(r"const int address_count\s*=\s*\d+;[^\n]*\n")
-_NAMES_RE    = re.compile(
+_COUNT_RE = re.compile(r"const int address_count\s*=\s*\d+;[^\n]*\n")
+_NAMES_RE = re.compile(
     r"const char\*\s+team_names\[address_count\]\s+PROGMEM\s*=\s*\{.*?\};\n",
     re.DOTALL,
 )
-_ADDR_RE     = re.compile(
+_ADDR_RE  = re.compile(
     r"const uint8_t\s+address_list\[address_count\]\[6\]\s+PROGMEM\s*=\s*\{.*?\};\n",
     re.DOTALL,
 )
 
 
 def patch_cpp(source: str, names_block: str, addr_block: str) -> str:
-    """Replace the two array definitions (and address_count) in the C++ source."""
-
-    # The names_block already contains the count line; remove the old count line first
     source = _COUNT_RE.sub("", source, count=1)
-
-    # Replace team_names array
     if not _NAMES_RE.search(source):
         sys.exit("ERROR: Could not locate team_names[] in main.cpp")
     source = _NAMES_RE.sub(names_block, source, count=1)
-
-    # Replace address_list array
     if not _ADDR_RE.search(source):
         sys.exit("ERROR: Could not locate address_list[] in main.cpp")
     source = _ADDR_RE.sub(addr_block, source, count=1)
-
     return source
 
 
@@ -187,11 +179,11 @@ def main():
     if not cpp_path.exists():
         sys.exit(f"ERROR: main.cpp not found: {cpp_path}")
 
-    rows    = load_csv(csv_path)
-    entries = build_entries(rows)
+    headers, rows = load_csv(csv_path)
+    mac_indices   = find_mac_indices(headers)
+    entries       = build_entries(headers, rows, mac_indices)
     names_block, addr_block = build_c_arrays(entries)
 
-    # Back up original
     backup = cpp_path.with_suffix(".cpp.bak")
     shutil.copy2(cpp_path, backup)
     print(f"Backed up original to {backup}")
