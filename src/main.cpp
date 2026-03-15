@@ -148,7 +148,9 @@ State operator++(State& currentState, int)
 #pragma endregion state_enum_stuff
 
 // ESP-now stuff
-esp_now_peer_info_t peerInfo[address_count];
+// Currently registered peer (minimizes 20 peer limit).
+esp_now_peer_info_t activePeerInfo;
+
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) { // callback function when data sent
   /*Serial.print("\r\nLast Packet Send Status:\t");
   Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
@@ -183,6 +185,9 @@ void sendingModeOperations();
 void debugModeOperations();
 // function to only return true on rising edge
 bool getButtonRisingEdge(bool currentVal, bool oldVal);
+// peer management - add/remove the single active peer
+void activatePeer(int index);
+void deactivatePeer(int index);
 #pragma endregion function_declarations
 
 // runtime variables
@@ -205,24 +210,9 @@ void setup() {
     }
   }
  
-  // Once ESPNow is successfully Init, we will register for Send CB to
-  // get the status of Trasnmitted packet
-  esp_now_register_send_cb(OnDataSent);
+  // Register only the initially selected peer. Further add/remove is handled
+  activatePeer(currentAddressIndex);
   
-  // Register peers
-  for(int i = 0; i < 20; ++i){
-    memcpy(peerInfo[i].peer_addr, address_list[i], 6); // copy address from list to peerInfo address
-    peerInfo[i].channel = 0;  
-    peerInfo[i].encrypt = false;
-    
-    // Add peer        
-    if (esp_now_add_peer(&(peerInfo[i])) != ESP_OK){
-      Serial.printf("Failed to add peer %d\n", i);
-    }
-    
-  }
-  
-
   // controller setup
   delay(1000);
   controller = Controller(joyL_x_pin, joyL_y_pin, joyL_z_pin, joyR_x_pin, joyR_y_pin, joyR_z_pin, but_x_pin, but_y_pin, but_a_pin, but_b_pin,
@@ -276,9 +266,6 @@ void loop() {
   default: break; // do nothing, this should be impossible to ever happen tho
   }
   
-
-  
-
   // update last button states
   lastControllerData = controllerData;
   lastSwitchButtonState = switchButtonPressed;
@@ -531,9 +518,32 @@ void drawControllerBorders(){
 }
 #pragma endregion drawing_functions
 
+// Register the peer at address_list[index] with ESP-NOW
+void activatePeer(int index){
+  memcpy(activePeerInfo.peer_addr, address_list[index], 6);
+  activePeerInfo.channel = 0;
+  activePeerInfo.encrypt = false;
+  if(!esp_now_is_peer_exist(activePeerInfo.peer_addr)){
+    if(esp_now_add_peer(&activePeerInfo) != ESP_OK){
+      Serial.printf("activatePeer: failed to add peer %d\n", index);
+    }
+  }
+}
+
+// Unregister the peer at address_list[index] from ESP-NOW
+void deactivatePeer(int index){
+  const uint8_t* mac = address_list[index];
+  if(esp_now_is_peer_exist(mac)){
+    if(esp_now_del_peer(mac) != ESP_OK){
+      Serial.printf("deactivatePeer: failed to remove peer %d\n", index);
+    }
+  }
+}
+
 void sendingModeOperations(){
 
   if(getButtonRisingEdge(switchButtonPressed, lastSwitchButtonState)){ // if just swapped to sending mode
+    activatePeer(currentAddressIndex); // register the selected peer
     display.clearDisplay();  // display new team info
     drawDefaults();
     drawControllerState();
@@ -557,6 +567,7 @@ void sendingModeOperations(){
 
 void debugModeOperations(){
   if(getButtonRisingEdge(switchButtonPressed, lastSwitchButtonState)){
+    deactivatePeer(currentAddressIndex); // drop the peer while in debug mode
     display.clearDisplay();
     drawDefaults();
     drawControllerState();
