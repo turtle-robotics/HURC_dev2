@@ -18,8 +18,8 @@ from pathlib import Path
 from datetime import datetime
 
 COL_TIMESTAMP = "Timestamp"
-COL_TEAM_NUM  = "What is your team number? SOMTECH members put \"SOMTECH\""
-COL_TEAM_NAME = "Create a team name. SOMTECH members put SOMTECH <team name>"
+COL_TEAM_NUM  = "What is your team number?  Non-TURTLE: members put <ORG> "
+COL_TEAM_NAME = "Team name. Non-TURTLE Cstat members put <ORG team name> "
 MAC_COL_HINT  = "xx:xx:xx:xx:xx:xx"
 
 DEBUG_ENTRY = {

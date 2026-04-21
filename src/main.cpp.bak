@@ -41,38 +41,41 @@ const int LOGO_START_Y = 32;
 // various constant data the controller uses
 const uint8_t broadcast_address[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
+
+
+
 const int address_count = 23; // total number of addresses in the list
 
 const char* team_names[address_count] PROGMEM = {
   "debug test", // debug
-  "khanathan jr", // 1
-  "BMNH", // 2
+  "Glinda", // 1
+  "Baby Mutant Ninja Hatchlings (BMNH)", // 2
   "TBD", // 4
   "Guido", // 6
   "Lebron James Fan Club", // 7
   "egg", // 8
   "Apoorv", // 10
-  "Shay and team", // 12
-  "hanging by PLA thread", // 13
-  "Isaac", // 14
-  "Wall Breakers", // 15
+  "shay and em", // 12
+  "hanging by PLA thread (or K.S.)", // 13
+  "Team Wall Breakers", // 15
   "SEC", // 16
-  "Papa Smurf", // 19
+  "the team that fried the esp32 :(", // 19
   "BBL Drizzy", // 20
   "team dunce", // 21
   "gecko", // 23
   "OnePieceIsTrash", // 27
   "The Turtle", // 30
   "Raven", // 32
-  "Uncertified Forklift", // SOMTECH 1
-  "mongo2007", // SOMTECH 2
-  "Dexter", // SOMTECH 3
+  "Kid Named Finger", // 42
+  "mongo2007", // SOMTECH (mongo2007)
+  "SOMTECH DEXTER", // SOMTECH (SOMTECH DEXTER)
+  "Uncertified Forklift", // SOMTECH (Uncertified Forklift)
 };
 
 const uint8_t address_list[address_count][6] PROGMEM = {
-  {0x08, 0x00, 0x00, 0x00, 0x00, 0x00}, // debug test
+  {0x08, 0x00, 0x00, 0x00, 0x00, 0x00}, // debug
   {0x08, 0xb6, 0x1f, 0xb8, 0x36, 0xdc}, // 1
-  {0x80, 0xf3, 0xda, 0x40, 0xe3, 0xd8}, // 2 
+  {0x80, 0xf3, 0xda, 0x40, 0xe3, 0xd8}, // 2
   {0x80, 0xf3, 0xda, 0x40, 0xfc, 0x4c}, // 4
   {0xec, 0xe3, 0x34, 0x22, 0xe0, 0x04}, // 6
   {0xec, 0xe3, 0x34, 0x22, 0xb5, 0x7c}, // 7
@@ -80,20 +83,19 @@ const uint8_t address_list[address_count][6] PROGMEM = {
   {0x80, 0xf3, 0xda, 0x40, 0xdc, 0x10}, // 10
   {0x80, 0xf3, 0xda, 0x41, 0x00, 0x0c}, // 12
   {0x80, 0xf3, 0xda, 0x41, 0x51, 0xd4}, // 13
-  {0xc8, 0x2e, 0x18, 0xf0, 0xa4, 0x0c}, // 14
   {0x80, 0xf3, 0xda, 0x40, 0xe4, 0x74}, // 15
   {0xc8, 0x2e, 0x18, 0xee, 0x5b, 0xd0}, // 16
   {0x80, 0xf3, 0xda, 0x41, 0x6c, 0x80}, // 19
-  {0x80, 0xf3, 0xda, 0x41, 0x19, 0x64}, // 20
+  {0x80, 0xf3, 0xda, 0x42, 0xd9, 0xcc}, // 20
   {0x80, 0xf3, 0xda, 0x41, 0x2d, 0xa8}, // 21
   {0x80, 0xf3, 0xda, 0x40, 0xeb, 0xf0}, // 23
-  {0x80, 0xf3, 0xda, 0x42, 0xd0, 0x68}, // 27
+  {0x80, 0xf3, 0xda, 0x42, 0xfd, 0x60}, // 27
   {0x08, 0xb6, 0x1f, 0xb8, 0x1d, 0x28}, // 30
   {0x08, 0xb6, 0x1f, 0xb8, 0x64, 0x20}, // 32
-  {0x80, 0xf3, 0xda, 0x41, 0x45, 0xa0}, // SOMTECH 1 (Isaac)
-  {0xec, 0xe3, 0x34, 0x21, 0x68, 0x6c}, // SOMTECH 2
-  {0x80, 0xf3, 0xda, 0x42, 0x9d, 0x40}, // SOMTECH 3
-  // {0x, 0x, 0x, 0x, 0x, 0x}, // 
+  {0x11, 0x22, 0x33, 0x44, 0x55, 0x66}, // 42
+  {0xec, 0xe3, 0x34, 0x21, 0x68, 0x6c}, // SOMTECH (mongo2007)
+  {0x80, 0xf3, 0xda, 0x42, 0x9d, 0x40}, // SOMTECH (SOMTECH DEXTER)
+  {0x80, 0xf3, 0xda, 0x41, 0x3f, 0x10}, // SOMTECH (Uncertified Forklift)
 };
 
 const int LOGO_WIDTH = 32;
@@ -148,7 +150,9 @@ State operator++(State& currentState, int)
 #pragma endregion state_enum_stuff
 
 // ESP-now stuff
-esp_now_peer_info_t peerInfo[address_count];
+// Currently registered peer (minimizes 20 peer limit).
+esp_now_peer_info_t activePeerInfo;
+
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) { // callback function when data sent
   /*Serial.print("\r\nLast Packet Send Status:\t");
   Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
@@ -183,6 +187,9 @@ void sendingModeOperations();
 void debugModeOperations();
 // function to only return true on rising edge
 bool getButtonRisingEdge(bool currentVal, bool oldVal);
+// peer management - add/remove the single active peer
+void activatePeer(int index);
+void deactivatePeer(int index);
 #pragma endregion function_declarations
 
 // runtime variables
@@ -205,24 +212,9 @@ void setup() {
     }
   }
  
-  // Once ESPNow is successfully Init, we will register for Send CB to
-  // get the status of Trasnmitted packet
-  esp_now_register_send_cb(OnDataSent);
+  // Register only the initially selected peer. Further add/remove is handled
+  activatePeer(currentAddressIndex);
   
-  // Register peers
-  for(int i = 0; i < 20; ++i){
-    memcpy(peerInfo[i].peer_addr, address_list[i], 6); // copy address from list to peerInfo address
-    peerInfo[i].channel = 0;  
-    peerInfo[i].encrypt = false;
-    
-    // Add peer        
-    if (esp_now_add_peer(&(peerInfo[i])) != ESP_OK){
-      Serial.printf("Failed to add peer %d\n", i);
-    }
-    
-  }
-  
-
   // controller setup
   delay(1000);
   controller = Controller(joyL_x_pin, joyL_y_pin, joyL_z_pin, joyR_x_pin, joyR_y_pin, joyR_z_pin, but_x_pin, but_y_pin, but_a_pin, but_b_pin,
@@ -276,9 +268,6 @@ void loop() {
   default: break; // do nothing, this should be impossible to ever happen tho
   }
   
-
-  
-
   // update last button states
   lastControllerData = controllerData;
   lastSwitchButtonState = switchButtonPressed;
@@ -531,9 +520,32 @@ void drawControllerBorders(){
 }
 #pragma endregion drawing_functions
 
+// Register the peer at address_list[index] with ESP-NOW
+void activatePeer(int index){
+  memcpy(activePeerInfo.peer_addr, address_list[index], 6);
+  activePeerInfo.channel = 0;
+  activePeerInfo.encrypt = false;
+  if(!esp_now_is_peer_exist(activePeerInfo.peer_addr)){
+    if(esp_now_add_peer(&activePeerInfo) != ESP_OK){
+      Serial.printf("activatePeer: failed to add peer %d\n", index);
+    }
+  }
+}
+
+// Unregister the peer at address_list[index] from ESP-NOW
+void deactivatePeer(int index){
+  const uint8_t* mac = address_list[index];
+  if(esp_now_is_peer_exist(mac)){
+    if(esp_now_del_peer(mac) != ESP_OK){
+      Serial.printf("deactivatePeer: failed to remove peer %d\n", index);
+    }
+  }
+}
+
 void sendingModeOperations(){
 
   if(getButtonRisingEdge(switchButtonPressed, lastSwitchButtonState)){ // if just swapped to sending mode
+    activatePeer(currentAddressIndex); // register the selected peer
     display.clearDisplay();  // display new team info
     drawDefaults();
     drawControllerState();
@@ -557,6 +569,7 @@ void sendingModeOperations(){
 
 void debugModeOperations(){
   if(getButtonRisingEdge(switchButtonPressed, lastSwitchButtonState)){
+    deactivatePeer(currentAddressIndex); // drop the peer while in debug mode
     display.clearDisplay();
     drawDefaults();
     drawControllerState();
