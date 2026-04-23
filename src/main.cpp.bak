@@ -42,7 +42,8 @@ const int LOGO_START_Y = 32;
 const uint8_t broadcast_address[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
 
-const int address_count = 11; // total number of addresses in the list
+
+const int address_count = 12; // total number of addresses in the list
 
 const char* team_names[address_count] PROGMEM = {
   "debug test", // debug
@@ -55,6 +56,7 @@ const char* team_names[address_count] PROGMEM = {
   "Faze Clan", // 18
   "what the sigma", // 19
   "Turtle", // 28
+  "Team 29", // 29
   "SSM", // 33
 };
 
@@ -69,6 +71,7 @@ const uint8_t address_list[address_count][6] PROGMEM = {
   {0xd4, 0xe9, 0xf4, 0xbc, 0xd3, 0xe0}, // 18
   {0xd4, 0xe9, 0xf4, 0xb3, 0x59, 0xf4}, // 19
   {0x80, 0xf3, 0xda, 0x42, 0xa2, 0xa8}, // 28
+  {0xd4, 0xe9, 0xf4, 0xb0, 0xe0, 0xec}, // 29
   {0x80, 0xf3, 0xda, 0x42, 0x95, 0xb8}, // 33
 };
 
