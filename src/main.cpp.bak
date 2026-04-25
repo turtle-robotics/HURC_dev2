@@ -40,6 +40,8 @@ const int LOGO_START_Y = 32;
 
 // various constant data the controller uses
 const uint8_t broadcast_address[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+
+
 const int address_count = 1; // total number of addresses in the list
 
 const char* team_names[address_count] PROGMEM = {

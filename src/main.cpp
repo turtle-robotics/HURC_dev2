@@ -41,7 +41,9 @@ const int LOGO_START_Y = 32;
 // various constant data the controller uses
 const uint8_t broadcast_address[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
-const int address_count = 17; // total number of addresses in the list
+
+
+const int address_count = 19; // total number of addresses in the list
 
 const char* team_names[address_count] PROGMEM = {
   "debug test", // debug
@@ -50,6 +52,7 @@ const char* team_names[address_count] PROGMEM = {
   "Just Noticeable Diff.", // 6
   "Bestest Hatchling", // 7
   "Ball Robot", // 8
+  "PEKing Duck", // 9
   "Awesome Team", // 12
   "RAPS", // 14
   "Faze Clan", // 18
@@ -61,6 +64,7 @@ const char* team_names[address_count] PROGMEM = {
   "Team 29", // 29
   "A", // 31
   "SSM", // 33
+  "SOMTECH", // 40
 };
 
 const uint8_t address_list[address_count][6] PROGMEM = {
@@ -70,6 +74,7 @@ const uint8_t address_list[address_count][6] PROGMEM = {
   {0xb0, 0xcb, 0xd8, 0xc0, 0x79, 0x3c}, // 6
   {0xd4, 0xe9, 0xf4, 0xb4, 0xa5, 0xc0}, // 7
   {0x80, 0xf3, 0xda, 0x42, 0xab, 0x8c}, // 8
+  {0xec, 0xe3, 0x34, 0x21, 0x85, 0xb8}, // 9
   {0xd4, 0xe9, 0xf4, 0xb4, 0x11, 0x6c}, // 12
   {0xd4, 0xe9, 0xf4, 0xb3, 0x51, 0x94}, // 14
   {0xd4, 0xe9, 0xf4, 0xbc, 0xd3, 0xe0}, // 18
@@ -81,6 +86,7 @@ const uint8_t address_list[address_count][6] PROGMEM = {
   {0xd4, 0xe9, 0xf4, 0xb0, 0xe0, 0xec}, // 29
   {0x88, 0x57, 0x21, 0x94, 0x63, 0x00}, // 31
   {0x80, 0xf3, 0xda, 0x42, 0x95, 0xb8}, // 33
+  {0x80, 0xf3, 0xda, 0x42, 0xf7, 0xc0}, // 40
 };
 
 const int LOGO_WIDTH = 32;
