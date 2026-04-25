@@ -1,7 +1,16 @@
-Timestamp,Submitter Name ,What is your team number?  Non-TURTLE: members put <ORG> ,Team name. Non-TURTLE Cstat members put <ORG team name> ,xx:xx:xx:xx:xx:xx ,xx:xx:xx:xx:xx:xx ,xx:xx:xx:xx:xx:xx ,xx:xx:xx:xx:xx:xx ,xx:xx:xx:xx:xx:xx ,xx:xx:xx:xx:xx:xx 
-4/20/2026 22:44:09,Nicholas Ding,6,Just Noticeable Difference,ec,e3,34,21,37,c0
-4/21/2026 11:10:40,Matias,28,Turtle,80,f3,da,42,a2,a8
-4/21/2026 12:34:18,Joseph Lei,19,what the sigma,d4,e9,f4,b3,59,f4
-4/21/2026 13:06:57,Nathan Lien,14,RAPS,d4,e9,f4,b3,51,94
-4/21/2026 13:31:49,Braden Gallagher,18,Faze Clan,d4,e9,f4,bc,d3,e0
-4/21/2026 14:05:54,Ronie Oommen,4,R.A.J.,d4,e9,f4,b3,ea,88
+Timestamp,Submitter Name ,What is your team number?  Non-TURTLE: members put <ORG> ,Team name. Non-TURTLE Cstat members put <ORG team name> ,xx:xx:xx:xx:xx:xx ,xx:xx:xx:xx:xx:xx ,xx:xx:xx:xx:xx:xx ,xx:xx:xx:xx:xx:xx ,xx:xx:xx:xx:xx:xx ,xx:xx:xx:xx:xx:xx ,,Added to Repo?
+4/21/2026 11:10:40,Matias,28,Turtle,80,f3,da,42,a2,a8,,TRUE
+4/21/2026 12:34:18,Joseph Lei,19,what the sigma,d4,e9,f4,b3,59,f4,,TRUE
+4/21/2026 13:06:57,Nathan Lien,14,RAPS,d4,e9,f4,b3,51,94,,TRUE
+4/21/2026 13:31:49,Braden Gallagher,18,Faze Clan,d4,e9,f4,bc,d3,e0,,TRUE
+4/21/2026 14:05:54,Ronie Oommen,4,R.A.J.,d4,e9,f4,b3,ea,88,,TRUE
+4/21/2026 16:53:34,Long Phan,7,Bestest Hatchling,d4,e9,f4,b4,a5,c0,,TRUE
+4/21/2026 19:00:35,Yashvi Mehta,2,Team 2,d4,e9,f4,b5,6d,c4,,TRUE
+4/21/2026 22:09:05,Nicholas Ding,6,Just Noticeable Diff.,b0,cb,d8,c0,79,3c,,TRUE
+4/22/2026 12:51:43,Srishti Behera,33,SSM,80,F3,DA,42,95,B8,,TRUE
+4/22/2026 14:23:34,Meg Cervenka,12,Awesome Team,d4,e9,f4,b4,11,6c,,TRUE
+4/22/2026 20:45:50,Michael Tran,29,Team 29,d4,e9,f4,b0,e0,ec,,TRUE
+4/23/2026 18:10:16,Alex Tran,20,Jailor-P.Diddy,ec,e3,34,22,f7,9c,,FALSE
+4/23/2026 20:44:34,Tyler Tsai,21,crocs,d4,e9,f4,b3,df,6c,,FALSE
+4/23/2026 21:49:13,Aashrith Tutuku,31,A,88,57,21,94,63,00,,FALSE
+4/24/2026 17:57:57,Athan Chai,8,Ball Robot,80,f3,da,42,ab,8c,,FALSE
