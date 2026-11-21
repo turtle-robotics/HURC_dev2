@@ -10,6 +10,7 @@
 
 #include "utils.h"
 #include "drawing_functions.h"
+#include "team_info.h"
 
 // constants definitions
 const int SCREEN_WIDTH = 128;
@@ -38,41 +39,6 @@ const int but_dpad_pin = 12;
 const int poll_rate = 64;
 const float deadzone = 0.25f;
 
-
-
-// various constant data the controller uses
-const uint8_t broadcast_address[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-
-
-const int address_count = 11; // total number of addresses in the list
-
-const char* team_names[address_count] PROGMEM = {
-  "debug test", // debug
-  "Matthew^2", // 5
-  "IDC", // 7
-  "Overclocked", // 13
-  "spam musubi", // 15
-  "Blind leading the blind", // 18
-  "KZR", // 19
-  "Forklift Certified", // 21
-  "Placeholder", // 22
-  "Among Us Imposters", // 23
-  "Crazy Turtles", // 28
-};
-
-const uint8_t address_list[address_count][6] PROGMEM = {
-  {0xec, 0xe3, 0x34, 0x21, 0x8c, 0xa0}, // debug
-  {0xd4, 0xe9, 0xf4, 0xb3, 0xce, 0xc0}, // 5
-  {0x58, 0x2a, 0xbd, 0x70, 0xf9, 0x54}, // 7
-  {0x70, 0x4b, 0xca, 0x90, 0x43, 0xd0}, // 13
-  {0x80, 0xf3, 0xda, 0x41, 0x45, 0xa4}, // 15
-  {0x80, 0xf3, 0xda, 0x40, 0xdb, 0x88}, // 18
-  {0x80, 0xf3, 0xda, 0x42, 0x7e, 0x30}, // 19
-  {0x58, 0x2a, 0xbd, 0x70, 0xa0, 0xd8}, // 21
-  {0x80, 0xf3, 0xda, 0x40, 0xe3, 0x14}, // 22
-  {0x80, 0xf3, 0xda, 0x41, 0x68, 0x00}, // 23
-  {0xd4, 0xe9, 0xf4, 0xb3, 0x29, 0x34}, // 28
-};
 
 
 
@@ -114,6 +80,9 @@ void deactivatePeer(int index);
 
 // runtime variables
 int currentAddressIndex = 0;
+
+TeamInfoStore *team_infos;
+
 bool lastSwitchButtonState = false;
 enum State currentState = SEND_MODE;
 bool flipX = true;
@@ -123,6 +92,9 @@ void setup() {
   Serial.begin(115200);
   WiFi.mode(WIFI_STA);
   WiFi.begin();
+
+  team_infos = new TeamInfoStore();
+
 
   // esp now setup
   if (esp_now_init() != ESP_OK) {
@@ -159,7 +131,7 @@ void setup() {
   display.setTextWrap(true);
   
   // initial print to display
-  drawDefaults(currentAddressIndex, team_names[currentAddressIndex]);
+  drawDefaults(currentAddressIndex, team_infos->at(currentAddressIndex).team_name);
   drawControllerState();
   display.display();
 
@@ -241,7 +213,7 @@ void updateData(){
 
 // Register the peer at address_list[index] with ESP-NOW
 void activatePeer(int index){
-  memcpy(activePeerInfo.peer_addr, address_list[index], 6);
+  memcpy(activePeerInfo.peer_addr, team_infos->at(index).mac_addr, 6);
   activePeerInfo.channel = 0;
   activePeerInfo.encrypt = false;
   if(!esp_now_is_peer_exist(activePeerInfo.peer_addr)){
@@ -253,7 +225,7 @@ void activatePeer(int index){
 
 // Unregister the peer at address_list[index] from ESP-NOW
 void deactivatePeer(int index){
-  const uint8_t* mac = address_list[index];
+  const uint8_t* mac = team_infos->at(index).mac_addr;
   if(esp_now_is_peer_exist(mac)){
     if(esp_now_del_peer(mac) != ESP_OK){
       Serial.printf("deactivatePeer: failed to remove peer %d\n", index);
@@ -266,7 +238,7 @@ void sendingModeOperations(){
   if(getButtonRisingEdge(switchButtonPressed, lastSwitchButtonState)){ // if just swapped to sending mode
     activatePeer(currentAddressIndex); // register the selected peer
     display.clearDisplay();  // display new team info
-    drawDefaults(currentAddressIndex, team_names[currentAddressIndex]);
+    drawDefaults(currentAddressIndex, team_infos->at(currentAddressIndex).team_name);
     drawControllerState();
     display.display();
   }
@@ -275,7 +247,7 @@ void sendingModeOperations(){
   display.display();
 
   // fire in the hole
-  esp_err_t result = esp_now_send(address_list[currentAddressIndex], (uint8_t *) &controllerData, sizeof(controllerData));
+  esp_err_t result = esp_now_send(team_infos->at(currentAddressIndex).mac_addr, (uint8_t *) &controllerData, sizeof(controllerData));
 
 
   /*if (result == ESP_OK) {
@@ -290,7 +262,7 @@ void debugModeOperations(){
   if(getButtonRisingEdge(switchButtonPressed, lastSwitchButtonState)){
     deactivatePeer(currentAddressIndex); // drop the peer while in debug mode
     display.clearDisplay();
-    drawDefaults(currentAddressIndex, team_names[currentAddressIndex]);
+    drawDefaults(currentAddressIndex, team_infos->at(currentAddressIndex).team_name);
     drawControllerState();
     //print debug indicator
     display.setCursor(0, 56);
@@ -301,16 +273,16 @@ void debugModeOperations(){
   
 
    if(getButtonRisingEdge(controllerData.butB, lastControllerData.butB)){ // Go forward a team when you press right bumper (butB for face plate)
-    currentAddressIndex = (currentAddressIndex + 1) % address_count;
+    currentAddressIndex = (currentAddressIndex + 1) % team_infos->size();
     update = true;
   }
 
   if(getButtonRisingEdge(controllerData.butA, lastControllerData.butA)){ // Go back a team when you press left bumper (butA for face plate)
     if(currentAddressIndex == 0){
-      currentAddressIndex = address_count - 1;
+      currentAddressIndex = team_infos->size() - 1;
     }
     else{
-      currentAddressIndex = (currentAddressIndex - 1) % address_count;
+      currentAddressIndex = (currentAddressIndex - 1) % team_infos->size();
     }
     update = true;
   }
@@ -325,7 +297,7 @@ void debugModeOperations(){
 
   if(update){
     display.clearDisplay();
-    drawDefaults(currentAddressIndex, team_names[currentAddressIndex]);
+    drawDefaults(currentAddressIndex, team_infos->at(currentAddressIndex).team_name);
     drawControllerState();
     // print debug indicator
     display.setCursor(0, 56);
