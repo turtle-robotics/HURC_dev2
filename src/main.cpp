@@ -8,6 +8,9 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
+#include "utils.h"
+#include "drawing_functions.h"
+
 // constants definitions
 const int SCREEN_WIDTH = 128;
 const int SCREEN_LENGTH = 64;
@@ -35,16 +38,10 @@ const int but_dpad_pin = 12;
 const int poll_rate = 64;
 const float deadzone = 0.25f;
 
-const int LOGO_START_X = 96;
-const int LOGO_START_Y = 32;
+
 
 // various constant data the controller uses
 const uint8_t broadcast_address[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-
-
-
-
-
 
 
 const int address_count = 11; // total number of addresses in the list
@@ -64,7 +61,7 @@ const char* team_names[address_count] PROGMEM = {
 };
 
 const uint8_t address_list[address_count][6] PROGMEM = {
-  {0x08, 0x00, 0x00, 0x00, 0x00, 0x00}, // debug
+  {0xec, 0xe3, 0x34, 0x21, 0x8c, 0xa0}, // debug
   {0xd4, 0xe9, 0xf4, 0xb3, 0xce, 0xc0}, // 5
   {0x58, 0x2a, 0xbd, 0x70, 0xf9, 0x54}, // 7
   {0x70, 0x4b, 0xca, 0x90, 0x43, 0xd0}, // 13
@@ -77,56 +74,8 @@ const uint8_t address_list[address_count][6] PROGMEM = {
   {0xd4, 0xe9, 0xf4, 0xb3, 0x29, 0x34}, // 28
 };
 
-const int LOGO_WIDTH = 32;
-const int LOGO_HEIGHT = 32;
-const unsigned char turtle_logo [] PROGMEM = { // sick af turtle logo
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
-	0x00, 0xf0, 0x00, 0x00, 0x00, 0xfc, 0x00, 0x00, 0x00, 0x38, 0xc1, 0xe0, 0x00, 0x09, 0x4b, 0xc0, 
-	0x00, 0x01, 0x13, 0xc0, 0x00, 0x21, 0x97, 0x80, 0x00, 0x1f, 0xf0, 0x00, 0x00, 0x0f, 0xf9, 0x00, 
-	0x00, 0x1f, 0xfe, 0x00, 0x00, 0x9f, 0xfc, 0xc0, 0x00, 0x7f, 0xfc, 0xc0, 0x00, 0x1f, 0xfc, 0x20, 
-	0x07, 0x9f, 0xff, 0x80, 0x0f, 0x1f, 0xfc, 0x20, 0x0e, 0x7f, 0xf8, 0xe0, 0x06, 0x0f, 0xf8, 0x60, 
-	0x00, 0x07, 0xe6, 0x60, 0x00, 0x04, 0x42, 0x60, 0x00, 0x09, 0x40, 0x20, 0x00, 0x03, 0x40, 0x20, 
-	0x00, 0x07, 0x00, 0x00, 0x00, 0x0f, 0x00, 0x00, 0x00, 0x0f, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-};
 
 
-
-// Structure example to send data
-// Must match the receiver structure
-typedef struct struct_message {
-  float j1x; float j1y; bool j1z;
-  float j2x; float j2y; bool j2z;
-
-  bool butX; bool butY; bool butA; bool butB;
-  bool butLb; bool butLt; bool butRb; bool butRt; bool butMenu; bool butDpad;
-} struct_message;
-
-// enum to track state declaration and increment operator
-#pragma region state_enum_stuff
-// Controller State enum
-enum State{
-  SEND_MODE,
-  DEBUG_MODE
-};
-State& operator++(State& currentState){
-  switch(currentState) {
-    case SEND_MODE : return currentState = DEBUG_MODE;
-    case DEBUG_MODE : return currentState = SEND_MODE;
-    default : return currentState;
-  }
-  assert(false); // this should be unreachable, but if by some "miracle" the code makes it here it'll throw an error
-  return currentState; // this is just to prevent the compiler for yelling at you
-
-}
-
-State operator++(State& currentState, int)
-{
-  State tmp(currentState);
-  ++currentState;
-  return tmp;
-}
-#pragma endregion state_enum_stuff
 
 // ESP-now stuff
 // Currently registered peer (minimizes 20 peer limit).
@@ -142,7 +91,7 @@ void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) { // call
 struct_message controllerData = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 // create an object to store last cycle's controllerData so we can see button pulses
-struct_message lastControllerData = {0, 0, 0, 0, 0, 0, 0, 0, 0};;
+struct_message lastControllerData = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 // Create objects for controller and display
 Controller controller;
@@ -153,14 +102,6 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_LENGTH, &Wire, OLED_RESET);
 void readMacAddress();
 void updateData();
 
-void drawDefaults(); // just has the following functions in 1
-void drawTeamName();
-void drawTurtleLogo();
-void drawControllerBorders();
-
-void drawControllerState(u_int startX = 30, u_int startY = 32);
-void drawJoystickState(u_int startX, u_int startY);
-void drawButtonState(u_int startX, u_int startY);
 
 void sendingModeOperations();
 void debugModeOperations();
@@ -218,7 +159,7 @@ void setup() {
   display.setTextWrap(true);
   
   // initial print to display
-  drawDefaults();
+  drawDefaults(currentAddressIndex, team_names[currentAddressIndex]);
   drawControllerState();
   display.display();
 
@@ -297,207 +238,6 @@ void updateData(){
 
 }
 
-#pragma region drawing_functions
-
-void drawDefaults(){
-  drawTeamName();
-  drawTurtleLogo();
-  drawControllerBorders();
-}
-
-void drawTeamName(){
-  display.setCursor(0,0);
-  display.printf("#%d:%s", currentAddressIndex+1, team_names[currentAddressIndex]);
-}
-
-void drawTurtleLogo(){
-  display.drawBitmap(LOGO_START_X, LOGO_START_Y, turtle_logo, LOGO_WIDTH, LOGO_HEIGHT, 1); // draw sick af turtle logo
-}
-
-void drawJoystick1State(u_int startX, u_int startY){
-  // draw joystick state
-
-  // some settings
-  const u_int regionSize = 31;
-  const u_int circleSize = 2;
-  // used later
-  const u_int maxDist = ((regionSize - 4)/2) - circleSize; // the minus 4 is for a nice 2 pixel border around the region just for spacing
-
-  // calculate coordinates
-  u_int CENTER_X = startX + regionSize/2;
-  u_int CENTER_Y = startY + regionSize/2;
-
-  u_int xCoord = CENTER_X + controllerData.j1x * maxDist;
-  u_int yCoord = CENTER_Y + controllerData.j1y * maxDist;
-
-  // draw
-  display.fillCircle(CENTER_X + lastControllerData.j1x * maxDist, CENTER_Y + lastControllerData.j1y * maxDist, circleSize, BLACK); // wipe last
-  if(controllerData.j1z)
-    display.fillCircle(xCoord, yCoord, 2, WHITE);
-  else
-    display.drawCircle(xCoord, yCoord, 2, WHITE);
-
-}
-
-void drawJoystick2State(u_int startX, u_int startY){
-  // draw joystick state
-
-  // some settings
-  const u_int regionSize = 31;
-  const u_int circleSize = 2;
-  // used later
-  const u_int maxDist = ((regionSize - 4)/2) - circleSize; // the minus 4 is for a nice 2 pixel border around the region just for spacing
-
-  // calculate coordinates
-  u_int CENTER_X = startX + regionSize/2;
-  u_int CENTER_Y = startY + regionSize/2;
-
-  u_int xCoord = CENTER_X + controllerData.j2x * maxDist;
-  u_int yCoord = CENTER_Y + controllerData.j2y * maxDist;
-
-  // draw
-  display.fillCircle(CENTER_X + lastControllerData.j2x * maxDist, CENTER_Y + lastControllerData.j2y * maxDist, circleSize, BLACK); // wipe last
-  if(controllerData.j2z)
-    display.fillCircle(xCoord, yCoord, 2, WHITE);
-  else
-    display.drawCircle(xCoord, yCoord, 2, WHITE);
-
-}
-
-void drawButtonState(u_int startX, u_int startY){
-  // some settings
-  const u_int regionXSize = 35;
-  const u_int regionYSize = 32;
-  
-  const u_int buttonRadius = 2;
-
-  // calculate coordinates
-  u_int centerX = startX + regionXSize/2;
-  u_int centerY = startY + regionYSize/2 - regionYSize/13;
-
-    // Lb button
-    u_int LbButtonStartX = centerX - regionXSize/5 - 3;
-    u_int LbButtonStartY = centerY - regionYSize/5 - 2;
-
-    // Rb button
-    u_int RbButtonStartX = centerX + regionXSize/5 - 3;
-    u_int RbButtonStartY = centerY - regionYSize/5 - 2;
-
-    // Lt button
-    u_int LtButtonStartX = centerX - regionXSize/5 - 2;
-    u_int LtButtonStartY = centerY - regionYSize/5 - 7;
-
-    // Rt button
-    u_int RtButtonStartX = centerX + regionXSize/5 - 2;
-    u_int RtButtonStartY = centerY - regionYSize/5 - 7;
-
-    // A button
-    u_int AButtonStartX = centerX;
-    u_int AButtonStartY = centerY + regionXSize/17 + regionYSize/3;
-
-    // B button
-    u_int BButtonStartX = centerX + regionXSize/4;
-    u_int BButtonStartY = centerY + (regionXSize/17 + regionYSize/3)/2 + 1;
-
-    // X button
-    u_int XButtonStartX = centerX - regionXSize/4;
-    u_int XButtonStartY = centerY + (regionXSize/17 + regionYSize/3)/2 + 1;
-
-    // Y button
-    u_int YButtonStartX = centerX;
-    u_int YButtonStartY = centerY + regionXSize/17;
-
-    // Dpad Button
-    u_int DpadButtonStartX = centerX - regionXSize - 16; // idk if theres a better way to do this but whatever
-    u_int DpadButtonStartY = centerY - regionYSize/3 - 10;
-
-  // draw Lb button
-  if(controllerData.butLb){
-    display.fillRoundRect(LbButtonStartX, LbButtonStartY, 8, 4, 2, WHITE);
-  }
-  else{
-    display.fillRoundRect(LbButtonStartX, LbButtonStartY, 8, 4, 2, BLACK);
-    display.drawRoundRect(LbButtonStartX, LbButtonStartY, 8, 4, 2, WHITE);
-  }
-
-  // draw Rb button
-  if(controllerData.butRb){
-    display.fillRoundRect(RbButtonStartX, RbButtonStartY, 8, 4, 2, WHITE);
-  }
-  else{
-    display.fillRoundRect(RbButtonStartX, RbButtonStartY, 8, 4, 2, BLACK);
-    display.drawRoundRect(RbButtonStartX, RbButtonStartY, 8, 4, 2, WHITE);
-  }
-
-  // draw Lt button
-  if(controllerData.butLt){
-    display.fillRoundRect(LtButtonStartX, LtButtonStartY, 6, 6, 2, WHITE);
-  }
-  else{
-    display.fillRoundRect(LtButtonStartX, LtButtonStartY, 6, 6, 2, BLACK);
-    display.drawRoundRect(LtButtonStartX, LtButtonStartY, 6, 6, 2, WHITE);
-  }
-  
-  // draw Rt button
-  if(controllerData.butRt){
-    display.fillRoundRect(RtButtonStartX, RtButtonStartY, 6, 6, 2, WHITE);
-  }
-  else{
-    display.fillRoundRect(RtButtonStartX, RtButtonStartY, 6, 6, 2, BLACK);
-    display.drawRoundRect(RtButtonStartX, RtButtonStartY, 6, 6, 2, WHITE);
-  }
-
-  // draw A button
-  if(controllerData.butA){
-    display.fillCircle(AButtonStartX, AButtonStartY, buttonRadius, WHITE);
-  }
-  else{
-    display.fillCircle(AButtonStartX, AButtonStartY, buttonRadius, BLACK);
-    display.drawCircle(AButtonStartX, AButtonStartY, buttonRadius, WHITE);
-  }
-
-  // draw B button
-  if(controllerData.butB){
-    display.fillCircle(BButtonStartX, BButtonStartY, buttonRadius, WHITE);
-  }
-  else{
-    display.fillCircle(BButtonStartX, BButtonStartY, buttonRadius, BLACK);
-    display.drawCircle(BButtonStartX, BButtonStartY, buttonRadius, WHITE);
-  }
-
-  // draw X button
-  if(controllerData.butX){
-    display.fillCircle(XButtonStartX, XButtonStartY, buttonRadius, WHITE);
-  }
-  else{
-    display.fillCircle(XButtonStartX, XButtonStartY, buttonRadius, BLACK);
-    display.drawCircle(XButtonStartX, XButtonStartY, buttonRadius, WHITE);
-  }
-
-  // draw Y button
-  if(controllerData.butY){
-    display.fillCircle(YButtonStartX, YButtonStartY, buttonRadius, WHITE);
-  }
-  else{
-    display.fillCircle(YButtonStartX, YButtonStartY, buttonRadius, BLACK);
-    display.drawCircle(YButtonStartX, YButtonStartY, buttonRadius, WHITE);
-  }
-
-  // draw Dpad button
-  if(controllerData.butDpad){
-    display.fillRoundRect(DpadButtonStartX, DpadButtonStartY, 6, 4, 2, WHITE);
-  }
-  else{
-    display.fillRoundRect(DpadButtonStartX, DpadButtonStartY, 6, 4, 2, BLACK);
-    display.drawRoundRect(DpadButtonStartX, DpadButtonStartY, 6, 4, 2, WHITE);
-  }
-}
-
-void drawControllerBorders(){
-  display.drawRoundRect(1, 34, 27, 27, 2, WHITE); // draw border around joystick 1
-  display.drawRoundRect(32, 34, 27, 27, 2, WHITE); // draw border around joystick 2
-}
-#pragma endregion drawing_functions
 
 // Register the peer at address_list[index] with ESP-NOW
 void activatePeer(int index){
@@ -526,7 +266,7 @@ void sendingModeOperations(){
   if(getButtonRisingEdge(switchButtonPressed, lastSwitchButtonState)){ // if just swapped to sending mode
     activatePeer(currentAddressIndex); // register the selected peer
     display.clearDisplay();  // display new team info
-    drawDefaults();
+    drawDefaults(currentAddressIndex, team_names[currentAddressIndex]);
     drawControllerState();
     display.display();
   }
@@ -550,7 +290,7 @@ void debugModeOperations(){
   if(getButtonRisingEdge(switchButtonPressed, lastSwitchButtonState)){
     deactivatePeer(currentAddressIndex); // drop the peer while in debug mode
     display.clearDisplay();
-    drawDefaults();
+    drawDefaults(currentAddressIndex, team_names[currentAddressIndex]);
     drawControllerState();
     //print debug indicator
     display.setCursor(0, 56);
@@ -585,7 +325,7 @@ void debugModeOperations(){
 
   if(update){
     display.clearDisplay();
-    drawDefaults();
+    drawDefaults(currentAddressIndex, team_names[currentAddressIndex]);
     drawControllerState();
     // print debug indicator
     display.setCursor(0, 56);
@@ -595,12 +335,7 @@ void debugModeOperations(){
   display.display();
 }
 
-void drawControllerState(u_int startX, u_int startY){
-  drawJoystick1State(startX - 31, startY);
-  drawJoystick2State(startX, startY);
-  drawButtonState(startX + 31, startY);
-  drawControllerBorders();
-}
+
 
 bool getButtonRisingEdge(bool currentVal, bool oldVal){
   return currentVal && !oldVal; // return true only on rising edge of signal
