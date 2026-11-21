@@ -48,10 +48,12 @@ const uint8_t broadcast_address[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
 
 
-const int address_count = 12; // total number of addresses in the list
+
+const int address_count = 13; // total number of addresses in the list
 
 const char* team_names[address_count] PROGMEM = {
   "debug test", // debug
+  "RAAM", // 1
   "Matthew^2", // 5
   "IDC", // 7
   "Solidly Not Working", // 8
@@ -67,6 +69,7 @@ const char* team_names[address_count] PROGMEM = {
 
 const uint8_t address_list[address_count][6] PROGMEM = {
   {0x08, 0x00, 0x00, 0x00, 0x00, 0x00}, // debug
+  {0x80, 0xf3, 0xda, 0x41, 0x45, 0xe8}, // 1
   {0xd4, 0xe9, 0xf4, 0xb3, 0xce, 0xc0}, // 5
   {0x58, 0x2a, 0xbd, 0x70, 0xf9, 0x54}, // 7
   {0x80, 0xf3, 0xda, 0x42, 0xb1, 0x24}, // 8
