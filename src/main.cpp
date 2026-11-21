@@ -11,6 +11,7 @@
 #include "utils.h"
 #include "drawing_functions.h"
 #include "team_info.h"
+#include "team_update.h"
 
 // constants definitions
 const int SCREEN_WIDTH = 128;
@@ -42,7 +43,6 @@ const float deadzone = 0.25f;
 
 
 
-
 // ESP-now stuff
 // Currently registered peer (minimizes 20 peer limit).
 esp_now_peer_info_t activePeerInfo;
@@ -51,6 +51,23 @@ void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) { // call
   /*Serial.print("\r\nLast Packet Send Status:\t");
   Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
   */ // uncomment this if want debug message spam
+}
+
+void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
+  if(len < sizeof(header) + sizeof(TeamInfo)) {
+    Serial.println("got a packet with incorrect size!");
+    return;
+  }
+
+  if((len - sizeof(header)) % sizeof(TeamInfo) != 0 ) {
+    return;
+  }
+  
+  int team_count = determine_team_count(len);
+  
+  
+  
+
 }
 
 // Create a struct_message called controllerData
@@ -93,9 +110,6 @@ void setup() {
   WiFi.mode(WIFI_STA);
   WiFi.begin();
 
-  team_infos = new TeamInfoStore();
-
-
   // esp now setup
   if (esp_now_init() != ESP_OK) {
     Serial.println("Error initializing ESP-NOW");
@@ -103,7 +117,19 @@ void setup() {
       Serial.println("im killing myself");
     }
   }
+  esp_now_register_recv_cb(esp_now_recv_cb_t(OnDataRecv));
+
  
+
+  team_infos = new TeamInfoStore();
+  if (team_infos->size() == 0) {
+    Serial.println("using defaults!");
+    team_infos->load_defaults();
+  }
+  else {
+    Serial.println("loading stored team infos!");
+  }
+
   // Register only the initially selected peer. Further add/remove is handled
   activatePeer(currentAddressIndex);
   
@@ -203,11 +229,12 @@ void updateData(){
   controllerData.butMenu = controller.getMenu();
   controllerData.butDpad = controller.getDpad();
 
+  /*
   Serial.printf("joy1: %.2f %.2f %d  joy2: %.2f %.2f %d  buttons: %d %d %d %d %d  triggers: %d %d %d %d menu: %d\n", controllerData.j1x, controllerData.j1y,
     controllerData.j1z, controllerData.j2x, controllerData.j2y, controllerData.j2z, 
     controllerData.butX, controllerData.butY, controllerData.butA, controllerData.butB, 
     controllerData.butLt, controllerData.butLb, controllerData.butRt, controllerData.butRb, controllerData.butMenu, controllerData.butDpad); // uncomment if want debug messages
-
+  */
 }
 
 

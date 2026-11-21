@@ -4,9 +4,9 @@
 
 
 // various constant data the controller uses
-const uint8_t broadcast_address[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
 const char team_namespace[] = "teams";
+const char count_key[] = "count";
 
 const int address_count = 11; // total number of addresses in the list
 
@@ -40,9 +40,13 @@ const uint8_t address_list[address_count][6] PROGMEM = {
 
 
 
-TeamInfoStore::TeamInfoStore() : preferences(), team_count(address_count) {
+TeamInfoStore::TeamInfoStore() : preferences() {}
+
+void TeamInfoStore::load_defaults() {
     preferences.begin(team_namespace, false);
-    
+    // save team count
+    preferences.putUInt(count_key, address_count);
+
     for (int i = 0; i < address_count; ++i) {
         TeamInfo new_team_info(team_names[i], address_list[i]);
         
@@ -54,7 +58,6 @@ TeamInfoStore::TeamInfoStore() : preferences(), team_count(address_count) {
 
     }
     preferences.end();
-
 }
 
 
@@ -62,7 +65,7 @@ TeamInfo TeamInfoStore::at(int idx) {
 
     TeamInfo retrieved_team_info;
 
-    preferences.begin(team_namespace, false);
+    preferences.begin(team_namespace, true);
 
 
     std::string str_num = std::to_string(idx);
@@ -76,27 +79,37 @@ TeamInfo TeamInfoStore::at(int idx) {
 }
 
 size_t TeamInfoStore::size() {
-    return team_count;
+    uint32_t count;
+    preferences.begin(team_namespace, true);
+    count = preferences.getUInt(count_key, 0U);
+    preferences.end();
+
+    return count;
 }
 
 void TeamInfoStore::push_back(TeamInfo new_team) {
     preferences.begin(team_namespace, false);
-    
-    preferences.putBytes(std::to_string(team_count).c_str(), &new_team, sizeof(new_team));
-    team_count++;
+    uint32_t current_size = preferences.getUInt(count_key);
+
+
+    preferences.putBytes(std::to_string(current_size).c_str(), &new_team, sizeof(new_team));
+    preferences.putUInt(count_key, current_size + 1);
+
     preferences.end();
 }
 
 void TeamInfoStore::overwrite_list(TeamInfo *new_team_list, int count) {
     preferences.begin(team_namespace, false);
     preferences.clear();
-    preferences.end();
-    team_count = 0;
+    preferences.putUInt(count_key, count);
 
 
     for(int i = 0; i < count; ++i) {
-        push_back(new_team_list[i]);
+        preferences.putBytes(std::to_string(i).c_str(), &new_team_list[i], sizeof(new_team_list[i]));
+
     }
+
+    preferences.end();
     
 }
 

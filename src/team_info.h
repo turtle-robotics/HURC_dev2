@@ -4,6 +4,9 @@
 #include <Arduino.h>
 #include <Preferences.h>
 
+const uint8_t broadcast_address[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+
+
 typedef struct TeamInfo {
     char team_name[32];
     uint8_t mac_addr[6];
@@ -29,6 +32,8 @@ private:
 
 public:
     TeamInfoStore();
+
+    void load_defaults();
 
     size_t size();
 
