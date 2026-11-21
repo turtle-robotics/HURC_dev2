@@ -47,6 +47,9 @@ const float deadzone = 0.25f;
 // Currently registered peer (minimizes 20 peer limit).
 esp_now_peer_info_t activePeerInfo;
 
+TeamInfoStore *team_infos;
+
+
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) { // callback function when data sent
   /*Serial.print("\r\nLast Packet Send Status:\t");
   Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
@@ -55,15 +58,44 @@ void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) { // call
 
 void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
   if(len < sizeof(header) + sizeof(TeamInfo)) {
-    Serial.println("got a packet with incorrect size!");
+    Serial.println("got a packet that was too short!");
     return;
   }
 
+
   if((len - sizeof(header)) % sizeof(TeamInfo) != 0 ) {
+    Serial.println("got a packet of incorrect size!");
     return;
   }
-  
+
+
+  // verify header
+  for(unsigned int i = 0; i < sizeof(header); ++i) {
+    if(incomingData[i] != header[i]) {
+      Serial.println("got an incorrect header!");
+      return;
+    }
+  }
+
+  // get teaminfos
   int team_count = determine_team_count(len);
+
+  int curr_ptr = sizeof(header);
+
+  TeamInfo* new_team_info_list = new TeamInfo[team_count];
+  
+
+  while(curr_ptr < len) {
+    memcpy(&new_team_info, incomingData + curr_ptr, sizeof(new_team_info));
+    team_infos->push_back(new_team_info);
+    curr_ptr += sizeof(new_team_info);
+  }
+
+  delete[] new_team_info_list;
+  new_team_info_list = nullptr;
+
+
+  
   
   
   
@@ -98,7 +130,6 @@ void deactivatePeer(int index);
 // runtime variables
 int currentAddressIndex = 0;
 
-TeamInfoStore *team_infos;
 
 bool lastSwitchButtonState = false;
 enum State currentState = SEND_MODE;
