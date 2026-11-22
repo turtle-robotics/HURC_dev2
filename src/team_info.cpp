@@ -98,7 +98,7 @@ void TeamInfoStore::push_back(TeamInfo new_team) {
     preferences.end();
 }
 
-void TeamInfoStore::overwrite_list(TeamInfo *new_team_list, int count) {
+void TeamInfoStore::overwrite_list(const TeamInfo *new_team_list, int count) {
     preferences.begin(team_namespace, false);
     preferences.clear();
     preferences.putUInt(count_key, count);
@@ -111,5 +111,12 @@ void TeamInfoStore::overwrite_list(TeamInfo *new_team_list, int count) {
 
     preferences.end();
     
+}
+
+void TeamInfoStore::clear() {
+    preferences.begin(team_namespace, false);
+    preferences.clear();
+    preferences.putUInt(count_key, 0);
+    preferences.end();
 }
 

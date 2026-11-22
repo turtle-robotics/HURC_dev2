@@ -3,10 +3,11 @@
 #include <Arduino.h>
 #include <team_info.h>
 
+#define HEADER_SIZE 3
+const uint8_t const_header[2] = {0xDE, 0xAD};
+const uint8_t type_new_team = 0xBE;
+const uint8_t type_clear = 0xEF;
 
-const uint8_t header[2] = {0xDE, 0xAD};
-
-#define determine_team_count(len) ((len - sizeof(header)) / sizeof(TeamInfo) ) 
 
 
 

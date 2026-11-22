@@ -40,7 +40,8 @@ public:
     TeamInfo at(int idx);
     void push_back(TeamInfo new_team);
 
-    void overwrite_list(TeamInfo *new_team_list, int count);
+    void overwrite_list(const TeamInfo *new_team_list, int count);
+    void clear();
 
     
 };

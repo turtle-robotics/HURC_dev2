@@ -12,6 +12,7 @@
 #include "drawing_functions.h"
 #include "team_info.h"
 #include "team_update.h"
+#include <vector>
 
 // constants definitions
 const int SCREEN_WIDTH = 128;
@@ -57,48 +58,63 @@ void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) { // call
 }
 
 void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
-  if(len < sizeof(header) + sizeof(TeamInfo)) {
+  if(len < HEADER_SIZE) {
     Serial.println("got a packet that was too short!");
     return;
   }
 
-
-  if((len - sizeof(header)) % sizeof(TeamInfo) != 0 ) {
-    Serial.println("got a packet of incorrect size!");
-    return;
-  }
-
-
-  // verify header
-  for(unsigned int i = 0; i < sizeof(header); ++i) {
-    if(incomingData[i] != header[i]) {
-      Serial.println("got an incorrect header!");
+  // check constant part of header
+  for(unsigned int i = 0; i < sizeof(const_header); ++i) {
+    if(incomingData[i] != const_header[i]) {
+      Serial.println("Invalid constant header!");
       return;
     }
   }
 
-  // get teaminfos
-  int team_count = determine_team_count(len);
+  // check variable part of header
+  uint8_t variable_header = incomingData[sizeof(const_header)];
+  switch (variable_header) {
+    type_clear:{
+      // do stuff
+      team_infos->clear();
 
-  int curr_ptr = sizeof(header);
+      break;
+    }
+    
+    type_new_team: {
+      // do stuff
+      // determine number of teams
+      int team_segment_size = len - HEADER_SIZE;
+      if(team_segment_size % sizeof(TeamInfo) != 0) {
+        Serial.println("Invalid team segment size!");
+        return;
+      }
+      int new_team_count = team_segment_size / sizeof(TeamInfo);
 
-  TeamInfo* new_team_info_list = new TeamInfo[team_count];
-  
+      // collect team info
+      TeamInfo new_team_info;
+      std::vector<TeamInfo> new_teams(new_team_count);
+      int cur_idx = HEADER_SIZE;
 
-  while(curr_ptr < len) {
-    memcpy(&new_team_info, incomingData + curr_ptr, sizeof(new_team_info));
-    team_infos->push_back(new_team_info);
-    curr_ptr += sizeof(new_team_info);
+      while(cur_idx < len) {
+        memcpy(&new_team_info, incomingData + cur_idx, sizeof(TeamInfo));
+        new_teams.push_back(new_team_info);
+        cur_idx += sizeof(TeamInfo);
+      }
+
+      for(TeamInfo team : new_teams) {
+        team_infos->push_back(team);
+      }
+
+      break;
+    }
+    default: {
+      Serial.println("Invalid variable header!");
+      return;
+    }
   }
 
-  delete[] new_team_info_list;
-  new_team_info_list = nullptr;
 
-
-  
-  
-  
-  
 
 }
 
