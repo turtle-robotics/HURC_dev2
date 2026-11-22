@@ -57,66 +57,35 @@ void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) { // call
   */ // uncomment this if want debug message spam
 }
 
-void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
-  if(len < HEADER_SIZE) {
-    Serial.println("got a packet that was too short!");
+// ESP-NOW v1 supports at most 250 bytes of application payload.
+constexpr size_t MAX_UPDATE_PACKET_SIZE = 250;
+constexpr size_t TEAM_UPDATE_QUEUE_LENGTH = 12;
+
+struct TeamUpdatePacket {
+  uint16_t len;
+  uint8_t data[MAX_UPDATE_PACKET_SIZE];
+};
+
+QueueHandle_t teamUpdateQueue = nullptr;
+
+// Runs in the Wi-Fi task: copy only, never access Preferences here.
+void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len) {
+  if (len < HEADER_SIZE || len > static_cast<int>(MAX_UPDATE_PACKET_SIZE)) {
     return;
   }
 
-  // check constant part of header
-  for(unsigned int i = 0; i < sizeof(const_header); ++i) {
-    if(incomingData[i] != const_header[i]) {
-      Serial.println("Invalid constant header!");
-      return;
-    }
+  TeamUpdatePacket packet{};
+  packet.len = static_cast<uint16_t>(len);
+  memcpy(packet.data, incomingData, len);
+
+  // Nonblocking: the Wi-Fi task must not wait for flash/NVS operations.
+  if (teamUpdateQueue != nullptr) {
+    xQueueSend(teamUpdateQueue, &packet, 0);
   }
-
-  // check variable part of header
-  uint8_t variable_header = incomingData[sizeof(const_header)];
-  switch (variable_header) {
-    type_clear:{
-      // do stuff
-      team_infos->clear();
-
-      break;
-    }
-    
-    type_new_team: {
-      // do stuff
-      // determine number of teams
-      int team_segment_size = len - HEADER_SIZE;
-      if(team_segment_size % sizeof(TeamInfo) != 0) {
-        Serial.println("Invalid team segment size!");
-        return;
-      }
-      int new_team_count = team_segment_size / sizeof(TeamInfo);
-
-      // collect team info
-      TeamInfo new_team_info;
-      std::vector<TeamInfo> new_teams(new_team_count);
-      int cur_idx = HEADER_SIZE;
-
-      while(cur_idx < len) {
-        memcpy(&new_team_info, incomingData + cur_idx, sizeof(TeamInfo));
-        new_teams.push_back(new_team_info);
-        cur_idx += sizeof(TeamInfo);
-      }
-
-      for(TeamInfo team : new_teams) {
-        team_infos->push_back(team);
-      }
-
-      break;
-    }
-    default: {
-      Serial.println("Invalid variable header!");
-      return;
-    }
-  }
-
-
-
 }
+
+// Runs in loop(), not the Wi-Fi callback.
+void processTeamUpdates();
 
 // Create a struct_message called controllerData
 struct_message controllerData = {0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -163,6 +132,11 @@ void setup() {
     while(true){
       Serial.println("im killing myself");
     }
+  }
+  teamUpdateQueue = xQueueCreate(TEAM_UPDATE_QUEUE_LENGTH, sizeof(TeamUpdatePacket));
+  if (teamUpdateQueue == nullptr) {
+    Serial.println("Failed to allocate team update queue!");
+    while (true) delay(1000);
   }
   esp_now_register_recv_cb(esp_now_recv_cb_t(OnDataRecv));
 
@@ -215,6 +189,8 @@ void setup() {
 bool switchButtonPressed = false; // just so that we dont have to do controller.getS() a million times since that might reread the voltage every time, don't know honestly
 
 void loop() {
+  processTeamUpdates();
+
   // loop code for stuff like button debouncing
   controller.controllerUpdate();
   // get all the updated controller data loaded
@@ -240,6 +216,69 @@ void loop() {
   // delay according to polling rate
   delay((1.0f/poll_rate) * 1000);
 
+}
+
+void processTeamUpdates() {
+  TeamUpdatePacket packet;
+  while (xQueueReceive(teamUpdateQueue, &packet, 0) == pdTRUE) {
+    const uint8_t *data = packet.data;
+    const size_t len = packet.len;
+
+    if (memcmp(data, const_header, sizeof(const_header)) != 0) {
+      Serial.println("Invalid constant header!");
+      continue;
+    }
+
+    const uint8_t type = data[sizeof(const_header)];
+    if (type == type_clear) {
+      if (len != HEADER_SIZE) {
+        Serial.println("Invalid clear packet size!");
+        continue;
+      }
+      // Remove the old peer before clearing the list it came from.
+      if (team_infos->size() > 0 && currentState == SEND_MODE) {
+        deactivatePeer(currentAddressIndex);
+      }
+      team_infos->clear();
+      currentAddressIndex = 0;
+      Serial.println("Cleared Teams!");
+    } else if (type == type_new_team) {
+      const size_t bytes = len - HEADER_SIZE;
+      if (bytes == 0 || bytes % sizeof(TeamInfo) != 0) {
+        Serial.println("Invalid team segment size!");
+        continue;
+      }
+      const size_t count = bytes / sizeof(TeamInfo);
+      for (size_t i = 0; i < count; ++i) {
+        TeamInfo team;
+        memcpy(&team, data + HEADER_SIZE + i * sizeof(TeamInfo), sizeof(team));
+        team.team_name[sizeof(team.team_name) - 1] = '\0';
+        team_infos->push_back(team);
+      }
+      Serial.printf("Updated teams: added %u!\n", static_cast<unsigned>(count));
+      if (team_infos->size() > 0 && currentState == SEND_MODE) {
+        activatePeer(currentAddressIndex);
+      }
+    } else {
+      Serial.printf("Invalid variable header: 0x%02X\n", type);
+      continue;
+    }
+
+    // Refresh the screen after a change, but don't index an empty list.
+    display.clearDisplay();
+    if (team_infos->size() > 0) {
+      drawDefaults(currentAddressIndex, team_infos->at(currentAddressIndex).team_name);
+    } else {
+      display.setCursor(0, 0);
+      display.print("Waiting for teams...");
+    }
+    if (team_infos->size() > 0) drawControllerState();
+    if (currentState == DEBUG_MODE) {
+      display.setCursor(0, 56);
+      display.print("DEBUG");
+    }
+    display.display();
+  }
 }
 
 void readMacAddress(){
@@ -308,6 +347,7 @@ void deactivatePeer(int index){
 }
 
 void sendingModeOperations(){
+  if (team_infos->size() == 0) return;
 
   if(getButtonRisingEdge(switchButtonPressed, lastSwitchButtonState)){ // if just swapped to sending mode
     activatePeer(currentAddressIndex); // register the selected peer
@@ -333,6 +373,7 @@ void sendingModeOperations(){
 }
 
 void debugModeOperations(){
+  if (team_infos->size() == 0) return;
   if(getButtonRisingEdge(switchButtonPressed, lastSwitchButtonState)){
     deactivatePeer(currentAddressIndex); // drop the peer while in debug mode
     display.clearDisplay();
